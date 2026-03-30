@@ -1,0 +1,194 @@
+# Valle Studio Salon — Online Reservation & Payment System
+
+## Overview
+
+A full-stack Next.js 14 (App Router) salon booking application for **Valle Studio Salon** covering Hair, Nails, and Brows services. Customers can register or book as guests; an admin dashboard provides full reservation, walk-in, payment, and promotions management. GCash payments are handled via **Xendit API**, and all data/auth is backed by **Supabase**.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Supabase & Xendit credentials** — You will need to supply `.env.local` values for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `XENDIT_SECRET_KEY` before the payment and auth flows are fully functional. The scaffold will be wired up but will require these values.
+
+> [!IMPORTANT]
+> **Admin account seeding** — The admin dashboard will be protected by a Supabase `admin` role stored in a `profiles` table. After the DB schema is applied, you will need to manually promote at least one user to admin (or we can seed via a script).
+
+> [!WARNING]
+> **Xendit GCash is a Philippine payment method** — Xendit's GCash integration requires a live or sandbox Xendit PH account. Make sure your account is set up for GCash E-Wallet charges before testing.
+
+---
+
+## Proposed Changes
+
+### Phase 1 — Project Scaffold
+
+#### [NEW] Next.js 14 App Router project (`c:\vallestudio\`)
+Initialize with TypeScript, Tailwind CSS, ESLint, and `src/` directory.
+
+#### [NEW] Shadcn/UI initialization
+Run `npx shadcn@latest init` with the **"New York"** style and **Stone** base color (neutral, premium feel for a salon).
+
+#### [NEW] Additional dependencies
+```
+framer-motion          – page & UI animations
+@supabase/supabase-js  – Supabase client
+@supabase/ssr          – Server-side auth helpers for Next.js
+xendit-node            – Xendit Node.js SDK
+lucide-react           – Icon set (used by Shadcn)
+date-fns               – Date utilities for booking calendar
+react-hook-form        – Form state management
+zod                    – Schema validation
+@hookform/resolvers    – Zod adapter for RHF
+```
+
+---
+
+### Phase 2 — Supabase Database Schema
+
+#### [NEW] `supabase/migrations/001_initial_schema.sql`
+
+**Tables:**
+| Table | Key Columns |
+|---|---|
+| `profiles` | id (FK auth.users), full_name, phone, role (`customer`/`admin`) |
+| `services` | id, name, category (`hair`/`nails`/`brows`), duration_min, price, is_active |
+| `promotions` | id, code, discount_type (`percent`/`fixed`), discount_value, valid_from, valid_to, max_uses, uses_count |
+| `bookings` | id, profile_id (nullable for guests), guest_name, guest_phone, guest_email, service_id, stylist_name, booking_date, booking_time, status (`pending`/`confirmed`/`completed`/`cancelled`), is_walkin, created_at |
+| `payments` | id, booking_id, method (`cash`/`gcash`/`online_gcash`), amount, status (`pending`/`paid`/`failed`), xendit_id, paid_at |
+| `promotion_uses` | id, promotion_id, booking_id |
+
+**RLS Policies:**
+- Customers can read/create/update their own bookings
+- Admins have full CRUD on all tables
+- Service and promotion reads are public
+
+---
+
+### Phase 3 — Directory Structure
+
+```
+src/
+├── app/
+│   ├── (public)/                  ← Public-facing routes
+│   │   ├── page.tsx               ← Landing page
+│   │   ├── book/
+│   │   │   ├── page.tsx           ← Service selection
+│   │   │   ├── schedule/page.tsx  ← Date/time picker
+│   │   │   ├── details/page.tsx   ← Guest/profile info
+│   │   │   └── confirm/page.tsx   ← Summary + payment
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   ├── (customer)/                ← Authenticated customer routes
+│   │   └── dashboard/page.tsx     ← Booking history
+│   ├── (admin)/                   ← Admin-only routes
+│   │   └── admin/
+│   │       ├── page.tsx           ← Analytics overview
+│   │       ├── reservations/page.tsx
+│   │       ├── walk-ins/page.tsx
+│   │       ├── services/page.tsx
+│   │       ├── promotions/page.tsx
+│   │       └── payments/page.tsx
+│   ├── api/
+│   │   ├── bookings/route.ts
+│   │   ├── payments/
+│   │   │   ├── create-invoice/route.ts   ← Xendit invoice creation
+│   │   │   └── webhook/route.ts          ← Xendit payment callback
+│   │   └── auth/callback/route.ts
+│   └── layout.tsx
+├── components/
+│   ├── ui/                        ← Shadcn auto-generated
+│   ├── booking/                   ← Multi-step booking wizard components
+│   ├── admin/                     ← Admin dashboard components
+│   └── shared/                    ← Nav, footer, etc.
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts
+│   │   ├── server.ts
+│   │   └── middleware.ts
+│   ├── xendit.ts
+│   └── utils.ts
+└── types/
+    └── index.ts                   ← Shared TypeScript types
+```
+
+---
+
+### Phase 4 — Key Features Implementation
+
+#### Public Landing Page
+- Hero with salon branding, services overview, CTA to book
+- Framer Motion fade-in animations
+- Testimonials section
+
+#### Multi-Step Booking Wizard (`/book`)
+1. **Step 1** — Category & service selection (cards with icons)
+2. **Step 2** — Date/time picker (9:30 AM–7:00 PM, 30-min slots, blocks unavailable times from DB)
+3. **Step 3** — Guest info *or* logged-in profile prefill; promo code field
+4. **Step 4** — Booking summary + payment method selection (Cash, GCash in-store, Online GCash via Xendit)
+
+#### Customer Auth & Dashboard
+- Email/password auth via Supabase
+- Dashboard: upcoming bookings, history, cancel action
+
+#### Admin Dashboard
+- **Overview** — KPI cards (revenue today, weekly bookings, pending payments, walk-ins)
+- **Reservations** — Table with filters, status updates, inline edit
+- **Walk-ins** — Quick add form (name, phone, service, payment)
+- **Services** — CRUD for services (name, category,  price, duration, active toggle)
+- **Promotions** — CRUD for promo codes (discount type, value, validity, usage limit)
+- **Payments** — Payment status table, manually mark cash as paid
+
+#### Payment Flow
+- **Cash / GCash in-store** — Booking created with `pending` payment, admin marks as `paid`
+- **Online GCash (Xendit)** — `/api/payments/create-invoice` creates a Xendit invoice → redirect to Xendit checkout → webhook at `/api/payments/webhook` updates payment status
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Stylist Management** — Should stylists be manageable as users of the system, or just stored as simple name strings? Do customers need to pick a specific stylist during booking?
+
+> [!IMPORTANT]
+> **Booking Slot Duration** — Are all slots 30 minutes, or does it depend on the service duration? For example, a haircut might be 60 min while a nail polish is 30 min.
+
+> [!IMPORTANT]
+> **Multiple Services** — Can a customer book multiple services in one appointment, or only one service per booking?
+
+> [!IMPORTANT]
+> **Email Notifications** — Should booking confirmations be sent via email? (Supabase SMTP or a third-party like Resend/SendGrid)
+
+---
+
+## Verification Plan
+
+### Automated
+- `npm run build` — TypeScript compilation and route validation
+- `npm run lint` — ESLint checks
+
+### Manual Verification Steps
+1. **Guest booking flow** — Complete a booking from `/book` as a guest, verify DB record created
+2. **Auth flow** — Register → login → book as customer → view in customer dashboard
+3. **Admin dashboard** — Log in as admin, view all reservations, add walk-in, manage services
+4. **Payment (Cash)** — Book with cash, admin marks as paid, status updates
+5. **Payment (Xendit)** — Book with GCash online, verify redirect to Xendit checkout (sandbox)
+
+---
+
+## Build Order
+
+| # | Task |
+|---|---|
+| 1 | Scaffold Next.js + Shadcn + install deps |
+| 2 | Supabase schema SQL + env setup |
+| 3 | Auth middleware + Supabase client helpers |
+| 4 | Design system (globals.css, Shadcn theme) |
+| 5 | Landing page + shared nav/footer |
+| 6 | Multi-step booking wizard |
+| 7 | Customer auth pages (login, register, dashboard) |
+| 8 | Admin layout + overview dashboard |
+| 9 | Admin: reservations, walk-ins, services, promotions, payments |
+| 10 | API routes (bookings, Xendit payment, webhook) |
+| 11 | Xendit integration + payment redirect |
+| 12 | Polish: animations, loading states, error handling |
