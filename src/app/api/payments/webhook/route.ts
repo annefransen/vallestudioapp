@@ -50,6 +50,38 @@ export async function POST(request: NextRequest) {
         .from('bookings')
         .update({ status: 'confirmed' })
         .eq('id', payment.booking_id)
+
+      // Fetch booking details for email
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('*, service:services (name)')
+        .eq('id', payment.booking_id)
+        .single()
+
+      if (booking && booking.guest_email) {
+        const { resend } = await import('@/lib/resend')
+        const { BookingConfirmationEmail } = await import('@/emails/BookingConfirmation')
+        
+        if (resend) {
+          try {
+            await resend.emails.send({
+              from: 'Valle Studio <onboarding@resend.dev>',
+              to: booking.guest_email,
+              subject: 'Your Reservation at Valle Studio',
+              react: BookingConfirmationEmail({
+                customerName: booking.guest_name || 'Valued Client',
+                bookingDate: booking.booking_date,
+                bookingTime: booking.booking_time,
+                serviceName: booking.service?.name || 'Salon Component',
+                stylistName: booking.stylist_name || 'Any Available',
+                bookingId: booking.id,
+              }),
+            })
+          } catch (e) {
+            console.error('Webhook Email send failed:', e)
+          }
+        }
+      }
     }
 
     return Response.json({ success: true })
@@ -58,3 +90,4 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+

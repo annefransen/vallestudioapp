@@ -44,6 +44,15 @@ export interface Promotion {
   created_at: string
 }
 
+export interface Stylist {
+  id: string
+  name: string
+  specialty?: string
+  avatar_url?: string
+  is_active: boolean
+  created_at: string
+}
+
 export interface Booking {
   id: string
   profile_id: string | null
@@ -52,6 +61,7 @@ export interface Booking {
   guest_email: string | null
   service_id: string
   stylist_name: string | null
+  stylist_id: string | null
   booking_date: string
   booking_time: string
   status: BookingStatus
@@ -65,6 +75,7 @@ export interface Booking {
   profile?: Profile
   payment?: Payment
   promotion?: Promotion
+  stylist?: Stylist
 }
 
 export interface Payment {
@@ -89,6 +100,7 @@ export interface BookingFormData {
   booking_date: string
   booking_time: string
   stylist_name: string
+  stylist_id?: string
   // Step 3: Details
   is_guest: boolean
   guest_name: string

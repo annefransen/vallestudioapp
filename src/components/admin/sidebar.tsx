@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, Calendar, UserPlus, Scissors,
+  LayoutDashboard, Calendar, UserPlus, Scissors, Users,
   Tag, CreditCard, Menu, X, LogOut, ChevronRight
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: '/admin/reservations', label: 'Reservations', icon: Calendar },
   { href: '/admin/walk-ins', label: 'Walk-ins', icon: UserPlus },
   { href: '/admin/services', label: 'Services', icon: Scissors },
+  { href: '/admin/stylists', label: 'Stylists', icon: Users },
   { href: '/admin/promotions', label: 'Promotions', icon: Tag },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
 ]

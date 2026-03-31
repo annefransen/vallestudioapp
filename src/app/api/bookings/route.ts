@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 import xenditClient from '@/lib/xendit'
+import { resend } from '@/lib/resend'
+import BookingConfirmationEmail from '@/emails/BookingConfirmation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +13,7 @@ export async function POST(request: NextRequest) {
       guest_phone,
       guest_email,
       service_id,
+      stylist_id,
       stylist_name,
       booking_date,
       booking_time,
@@ -34,17 +37,50 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Check if slot is already taken
-    const { data: existingBooking } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('booking_date', booking_date)
-      .eq('booking_time', booking_time)
-      .not('status', 'in', '("cancelled","no_show")')
-      .single()
+    let assignedStylistId = stylist_id || null
+    let assignedStylistName = stylist_name || null
 
-    if (existingBooking) {
-      return Response.json({ error: 'This time slot is no longer available. Please choose another time.' }, { status: 409 })
+    if (assignedStylistId) {
+      // Specific Stylist selected
+      const { data: existingBooking } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('booking_date', booking_date)
+        .eq('booking_time', booking_time)
+        .eq('stylist_id', assignedStylistId)
+        .not('status', 'in', '("cancelled","no_show")')
+        .maybeSingle()
+
+      if (existingBooking) {
+        return Response.json({ error: 'This time slot is no longer available for the selected stylist.' }, { status: 409 })
+      }
+    } else {
+      // Any Available Stylist
+      const { data: activeStylists } = await supabase
+        .from('stylists')
+        .select('id, name')
+        .eq('is_active', true)
+
+      if (!activeStylists || activeStylists.length === 0) {
+        return Response.json({ error: 'No active stylists available.' }, { status: 500 })
+      }
+
+      const { data: bookedAtTime } = await supabase
+        .from('bookings')
+        .select('stylist_id')
+        .eq('booking_date', booking_date)
+        .eq('booking_time', booking_time)
+        .not('status', 'in', '("cancelled","no_show")')
+
+      const bookedIds = (bookedAtTime || []).map(b => b.stylist_id)
+      const availableStylist = activeStylists.find(s => !bookedIds.includes(s.id))
+
+      if (!availableStylist) {
+        return Response.json({ error: 'This time slot is fully booked. Please choose another time.' }, { status: 409 })
+      }
+
+      assignedStylistId = availableStylist.id
+      assignedStylistName = availableStylist.name
     }
 
     // Resolve promo ID if code provided
@@ -58,6 +94,10 @@ export async function POST(request: NextRequest) {
       promotion_id = promo?.id ?? null
     }
 
+    // Fetch service name for email
+    const { data: service } = await supabase.from('services').select('name').eq('id', service_id).single()
+    const fetchedServiceName = service?.name || 'Salon Component'
+
     // Create booking
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
@@ -67,7 +107,8 @@ export async function POST(request: NextRequest) {
         guest_phone,
         guest_email,
         service_id,
-        stylist_name,
+        stylist_id: assignedStylistId,
+        stylist_name: assignedStylistName,
         booking_date,
         booking_time,
         notes,
@@ -85,9 +126,8 @@ export async function POST(request: NextRequest) {
 
     // Create payment record
     if (payment_method === 'gcash_online') {
-      // Create Xendit invoice
+      // ... same xendit logic ...
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-      
       const invoice = await (xenditClient as unknown as { Invoice: { createInvoice: (params: unknown) => Promise<{ id: string; invoice_url: string }> } }).Invoice.createInvoice({
         externalId: booking.id,
         amount,
@@ -110,7 +150,6 @@ export async function POST(request: NextRequest) {
         xendit_invoice_url: invoice.invoice_url,
       })
 
-      // Increment promo usage
       if (promotion_id) {
         await supabase.rpc('increment_promo_usage', { promo_id: promotion_id })
       }
@@ -128,9 +167,30 @@ export async function POST(request: NextRequest) {
         status: 'pending',
       })
 
-      // Increment promo usage
       if (promotion_id) {
         await supabase.rpc('increment_promo_usage', { promo_id: promotion_id })
+      }
+
+      // Send Confirmation Email
+      if (resend && guest_email) {
+        try {
+          // Use dynamic react component injection
+          await resend.emails.send({
+            from: 'Valle Studio <onboarding@resend.dev>',
+            to: guest_email,
+            subject: 'Your Reservation at Valle Studio',
+            react: BookingConfirmationEmail({
+              customerName: guest_name,
+              bookingDate: booking_date,
+              bookingTime: booking_time,
+              serviceName: fetchedServiceName,
+              stylistName: assignedStylistName || 'Any Available',
+              bookingId: booking.id,
+            }),
+          })
+        } catch (e) {
+          console.error("Email send failed:", e)
+        }
       }
 
       return Response.json({ bookingId: booking.id })
@@ -140,6 +200,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
