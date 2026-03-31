@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, ChevronRight, Scissors, Calendar, User, CreditCard } from 'lucide-react'
+import { Check, ChevronRight, Scissors, Calendar, User, CreditCard, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Service, BookingFormData } from '@/types'
 
@@ -34,7 +34,7 @@ const defaultFormData: BookingFormData = {
   payment_method: 'cash',
 }
 
-export default function BookPage() {
+function BookContent() {
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState<BookingFormData>(defaultFormData)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -170,5 +170,17 @@ export default function BookPage() {
         </AnimatePresence>
       </div>
     </div>
+  )
+}
+
+export default function BookPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-muted/40 to-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <BookContent />
+    </Suspense>
   )
 }

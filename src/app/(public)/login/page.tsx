@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -21,7 +21,7 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
-export default function LoginPage() {
+function LoginContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -152,5 +152,17 @@ export default function LoginPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/50 to-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

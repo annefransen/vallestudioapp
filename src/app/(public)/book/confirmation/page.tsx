@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import type { Booking } from '@/types'
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
   const searchParams = useSearchParams()
   const bookingId = searchParams.get('id')
   const paid = searchParams.get('paid') === '1'
@@ -135,5 +135,17 @@ export default function ConfirmationPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/40 to-background">
+        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    }>
+      <ConfirmationContent />
+    </Suspense>
   )
 }
