@@ -33,6 +33,16 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+export type AdminWalkin = {
+  id: string
+  guest_name: string
+  guest_phone: string
+  booking_date: string
+  booking_time: string
+  service: { name: string; category: string; price: number } | null
+  payment: { id: string; method: string; status: string; amount: number } | null
+}
+
 function formatTime(time: string) {
   const [h, m] = time.split(':').map(Number)
   const period = h >= 12 ? 'PM' : 'AM'
@@ -40,8 +50,8 @@ function formatTime(time: string) {
 }
 
 export default function WalkInsPage() {
-  const [walkIns, setWalkIns] = useState<Booking[]>([])
-  const [services, setServices] = useState<Service[]>([])
+  const [walkIns, setWalkIns] = useState<AdminWalkin[]>([])
+  const [services, setServices] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [open, setOpen] = useState(false)
@@ -63,64 +73,109 @@ export default function WalkInsPage() {
   const loadData = async () => {
     const [wRes, sRes] = await Promise.all([
       supabase
-        .from('bookings')
-        .select('*, service:services(name, category, price), payment:payments(*)')
-        .eq('is_walkin', true)
+        .from('walkins')
+        .select('*, guests(*), booking_items(*, services(*)), payments(*)')
         .order('created_at', { ascending: false }),
-      supabase.from('services').select('*').eq('is_active', true).order('category'),
+      supabase.from('services').select('*').in('status', ['available', 'active']).order('category'),
     ])
-    setWalkIns(wRes.data ?? [])
+    
+    // Normalize data to standard Booking format
+    const normalized = (wRes.data ?? []).map(w => {
+      const d = w.start_time ? new Date(w.start_time) : new Date()
+      const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+      const guestName = w.guests ? `${w.guests.first_name || ''} ${w.guests.last_name || ''}`.trim() : 'Walk-in Guest'
+      const service = w.booking_items?.[0]?.services
+      const payment = w.payments?.[0]
+      return {
+        id: w.walkin_id,
+        guest_name: guestName,
+        guest_phone: w.guests?.phone || '',
+        booking_date: w.walkin_date,
+        booking_time: timeStr,
+        service: service ? { name: service.service_name, category: service.category, price: service.price } : null,
+        payment: payment ? { id: payment.payment_id, method: payment.payment_method, status: payment.status, amount: payment.amount } : null,
+      }
+    })
+
+    setWalkIns(normalized as any[])
     setServices(sRes.data ?? [])
     setLoading(false)
   }
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true)
-    const service = services.find(s => s.id === data.service_id)
+    const service = services.find(s => s.id === data.service_id) || services.find(s => (s as any).service_id === data.service_id)
     if (!service) return
 
-    // Create booking
-    const { data: booking, error: bErr } = await supabase
-      .from('bookings')
-      .insert({
-        guest_name: data.guest_name,
-        guest_phone: data.guest_phone,
-        service_id: data.service_id,
-        booking_date: data.booking_date,
-        booking_time: data.booking_time,
-        status: 'confirmed',
-        is_walkin: true,
+    try {
+      // 1. Create Guest
+      const [firstName, ...lastNameParts] = data.guest_name.split(' ')
+      const lastName = lastNameParts.join(' ') || 'Walk-in'
+      
+      const { data: guestData, error: guestErr } = await supabase
+        .from('guests')
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          phone: data.guest_phone,
+          role: 'walkin'
+        })
+        .select('guest_id')
+        .single()
+        
+      if (guestErr || !guestData) throw new Error('Failed to associate walk-in guest')
+
+      // 2. Create Walkin
+      const startTimeISO = new Date(`${data.booking_date}T${data.booking_time}:00`).toISOString()
+      const { data: walkinData, error: walkinErr } = await supabase
+        .from('walkins')
+        .insert({
+          guest_id: guestData.guest_id,
+          walkin_date: data.booking_date,
+          start_time: startTimeISO,
+          status: 'completed',
+          notes: 'Added via Admin Dashboard'
+        })
+        .select('walkin_id')
+        .single()
+
+      if (walkinErr || !walkinData) throw new Error('Failed to create walk_in record')
+
+      // 3. Create Booking Item
+      await supabase.from('booking_items').insert({
+        walkin_id: walkinData.walkin_id,
+        item_type: 'service',
+        service_id: (service as any).service_id || service.id,
+        price_at_time: service.price,
+        duration_at_time: (service as any).duration || '00:30:00',
       })
-      .select('id')
-      .single()
 
-    if (bErr || !booking) {
-      toast.error('Failed to add walk-in')
+      // 4. Create Payment
+      await supabase.from('payments').insert({
+        walkin_id: walkinData.walkin_id,
+        payment_method: data.payment_method,
+        amount: service.price,
+        status: data.is_paid ? 'paid' : 'pending',
+        paid_at: data.is_paid ? new Date().toISOString() : null,
+      })
+
+      toast.success('Walk-in added successfully!')
+      reset()
+      setOpen(false)
+      loadData()
+    } catch (err: any) {
+      toast.error(err.message || 'Transaction failed')
+    } finally {
       setSubmitting(false)
-      return
     }
-
-    // Create payment record
-    await supabase.from('payments').insert({
-      booking_id: booking.id,
-      method: data.payment_method,
-      amount: service.price,
-      status: data.is_paid ? 'paid' : 'pending',
-      paid_at: data.is_paid ? new Date().toISOString() : null,
-    })
-
-    toast.success('Walk-in added successfully!')
-    reset()
-    setOpen(false)
-    loadData()
-    setSubmitting(false)
   }
 
-  const markAsPaid = async (paymentId: string, bookingId: string) => {
+  const markAsPaid = async (paymentId: string, walkinId: string) => {
+    if (!paymentId) return
     const { error } = await supabase
       .from('payments')
       .update({ status: 'paid', paid_at: new Date().toISOString() })
-      .eq('id', paymentId)
+      .eq('payment_id', paymentId)
 
     if (error) {
       toast.error('Failed to update payment')
@@ -130,7 +185,7 @@ export default function WalkInsPage() {
     toast.success('Payment marked as paid')
     setWalkIns(prev =>
       prev.map(b =>
-        b.id === bookingId
+        b.id === walkinId
           ? { ...b, payment: b.payment ? { ...b.payment, status: 'paid' } : b.payment }
           : b
       )
@@ -138,7 +193,7 @@ export default function WalkInsPage() {
   }
 
   const selectedServiceId = watch('service_id')
-  const selectedService = services.find(s => s.id === selectedServiceId)
+  const selectedService = services.find(s => s.id === selectedServiceId || (s as any).service_id === selectedServiceId)
 
   return (
     <div className="space-y-6">
@@ -148,7 +203,14 @@ export default function WalkInsPage() {
           <p className="text-muted-foreground text-sm mt-1">Add and manage walk-in customers</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button />}></DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button className="gradient-brand text-white border-0 shadow-sm shadow-primary/30">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Walk-in
+              </Button>
+            }
+          />
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Add Walk-in Customer</DialogTitle>
@@ -174,9 +236,9 @@ export default function WalkInsPage() {
                     <SelectValue placeholder="Select service" />
                   </SelectTrigger>
                   <SelectContent>
-                    {services.map(s => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name} — ₱{s.price.toLocaleString()}
+                    {services.map((s: any) => (
+                      <SelectItem key={s.service_id || s.id} value={s.service_id || s.id}>
+                        {s.service_name || s.name} — ₱{s.price.toLocaleString()}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -256,7 +318,7 @@ export default function WalkInsPage() {
 
                 <div className="text-sm space-y-1 text-muted-foreground">
                   <p>{walkin.service?.name} · ₱{walkin.service?.price.toLocaleString()}</p>
-                  <p>{format(parseISO(walkin.booking_date), 'MMM d, yyyy')} at {formatTime(walkin.booking_time)}</p>
+                  <p>{format(parseISO(walkin.booking_date), 'MMM d, yyyy')} at {walkin.booking_time}</p>
                 </div>
 
                 {walkin.payment && (

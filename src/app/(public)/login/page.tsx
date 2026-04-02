@@ -52,7 +52,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/50 to-background px-4 py-20">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-muted/50 to-background px-4 py-20">
       <div className="w-full max-w-md">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -158,7 +158,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/50 to-background">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-muted/50 to-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     }>

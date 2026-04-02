@@ -54,18 +54,60 @@ export default function ReservationsPage() {
 
   const loadBookings = async () => {
     let query = supabase
-      .from('bookings')
-      .select('*, service:services(name, category, price), payment:payments(*)')
-      .eq('is_walkin', false)
-      .order('booking_date', { ascending: false })
-      .order('booking_time', { ascending: false })
+      .from('reservation')
+      .select(`
+        *,
+        profiles (first_name, last_name, phone),
+        guests (first_name, last_name, phone),
+        booking_items (*, services(service_name, category, price)),
+        payments (*)
+      `)
+      .order('reservation_date', { ascending: false })
+      .order('start_time', { ascending: false })
 
     if (statusFilter !== 'all') {
       query = query.eq('status', statusFilter)
     }
 
     const { data, error } = await query
-    if (!error) setBookings(data ?? [])
+    if (!error && data) {
+      const normalized = data.map((r: any) => {
+        const d = new Date(r.start_time)
+        const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+
+        const guestName = r.profiles 
+          ? `${r.profiles.first_name || ''} ${r.profiles.last_name || ''}`.trim() 
+          : r.guests 
+            ? `${r.guests.first_name || ''} ${r.guests.last_name || ''}`.trim()
+            : 'Guest'
+            
+        const guestPhone = r.guests?.phone || r.profiles?.phone || ''
+        const service = r.booking_items?.[0]?.services
+        const payment = r.payments?.[0]
+
+        return {
+          id: r.reservation_id,
+          status: r.status,
+          guest_name: guestName,
+          guest_phone: guestPhone,
+          is_walkin: false,
+          booking_date: r.reservation_date,
+          booking_time: timeStr,
+          created_at: r.created_at,
+          service: service ? {
+            name: service.service_name,
+            category: service.category,
+            price: service.price
+          } : null,
+          payment: payment ? {
+            method: payment.payment_method,
+            status: payment.status,
+            amount: payment.amount,
+          } : null
+        }
+      })
+      setBookings(normalized as any[])
+    }
     setLoading(false)
   }
 
@@ -74,9 +116,9 @@ export default function ReservationsPage() {
   const updateStatus = async (bookingId: string, newStatus: BookingStatus) => {
     setUpdatingId(bookingId)
     const { error } = await supabase
-      .from('bookings')
+      .from('reservation')
       .update({ status: newStatus })
-      .eq('id', bookingId)
+      .eq('reservation_id', bookingId)
 
     if (error) {
       toast.error('Failed to update status')
@@ -184,10 +226,10 @@ export default function ReservationsPage() {
                         {booking.payment ? (
                           <div>
                             <p className="text-xs capitalize">
-                              {booking.payment.method.replace(/_/g, ' ')}
+                              {booking.payment.method?.replace(/_/g, ' ') || 'Cash'}
                             </p>
                             <p className={`text-xs font-medium ${booking.payment.status === 'paid' ? 'text-green-600' : 'text-amber-600'}`}>
-                              {booking.payment.status === 'paid' ? 'Paid' : 'Pending'} — ₱{booking.payment.amount.toLocaleString()}
+                              {booking.payment.status === 'paid' ? 'Paid' : 'Pending'} — ₱{(booking.payment.amount ?? 0).toLocaleString()}
                             </p>
                           </div>
                         ) : '—'}

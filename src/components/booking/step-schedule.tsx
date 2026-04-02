@@ -53,107 +53,50 @@ function getSelectableDates() {
 export function StepSchedule({ formData, updateForm, onNext, onBack }: Props) {
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
-  const [stylists, setStylists] = useState<Stylist[]>([])
-  const [loadingStylists, setLoadingStylists] = useState(true)
   const dates = getSelectableDates()
   const supabase = createClient()
-
-  // Load active stylists
-  useEffect(() => {
-    supabase.from('stylists').select('*').eq('is_active', true).order('name')
-      .then(({ data }) => {
-        setStylists(data ?? [])
-        setLoadingStylists(false)
-      })
-  }, [])
 
   // Check availability
   useEffect(() => {
     if (!formData.booking_date) return
     setLoadingSlots(true)
     
-    let query = supabase.from('bookings').select('booking_time, stylist_id')
-      .eq('booking_date', formData.booking_date)
-      .not('status', 'in', '("cancelled","no_show")')
-      
-    if (formData.stylist_id) {
-      query = query.eq('stylist_id', formData.stylist_id)
-    }
-
-    query.then(({ data }) => {
-      const records = data ?? []
-      if (formData.stylist_id) {
-        // If a specific stylist is selected, just block the times they're booked
-        const times = records.map(b => b.booking_time.slice(0, 5))
-        setBookedSlots(times)
+    // In the new schema, staff mapping is not yet natively supported on the reservation table, 
+    // so we calculate global availability based on existing reservations.
+    supabase.from('reservation').select('start_time')
+      .eq('reservation_date', formData.booking_date)
+      .not('status', 'in', '("cancelled")')
+      .then(({ data }) => {
+        const records = data ?? []
+        // Extract HH:MM out of the TIMESTAMPTZ start_time string
+        const times = records.map(r => {
+          const d = new Date(r.start_time);
+          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        })
         
-        // Auto-clear invalid booking_time
-        if (formData.booking_time && times.includes(formData.booking_time)) {
-          updateForm({ booking_time: '' })
-        }
-      } else {
-        // If Any Available is selected, a slot is only dead if ALL stylists are booked
-        const totalStylists = Math.max(stylists.length, 1)
+        // Count overlapping reservations to prevent double bookings
+        // Assume the salon has 2 available chairs globally for now since staff isn't mapped
+        const MAX_CHAIRS = 2;
         const counts: Record<string, number> = {}
-        records.forEach(b => {
-          const time = b.booking_time.slice(0, 5)
+        times.forEach(time => {
           counts[time] = (counts[time] || 0) + 1
         })
-        const fullyBooked = Object.keys(counts).filter(time => counts[time] >= totalStylists)
+        
+        const fullyBooked = Object.keys(counts).filter(time => counts[time] >= MAX_CHAIRS)
         setBookedSlots(fullyBooked)
         
         if (formData.booking_time && fullyBooked.includes(formData.booking_time)) {
           updateForm({ booking_time: '' })
         }
-      }
-      setLoadingSlots(false)
-    })
-  }, [formData.booking_date, formData.stylist_id, stylists.length])
+        setLoadingSlots(false)
+      })
+  }, [formData.booking_date])
 
   const selectedDate = formData.booking_date ? parseISO(formData.booking_date) : null
   const canContinue = !!formData.booking_date && !!formData.booking_time
 
   return (
     <div className="space-y-7">
-      {/* Stylist preference */}
-      {!loadingStylists && stylists.length > 0 && (
-        <div>
-          <Label htmlFor="stylist" className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4 text-primary" />
-            Select Stylist
-          </Label>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => updateForm({ stylist_id: '', stylist_name: 'Any Available' })}
-              className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-150 ${
-                !formData.stylist_id
-                  ? 'gradient-brand text-white border-transparent shadow-md'
-                  : 'bg-card border-border text-foreground hover:border-primary/40'
-              }`}
-            >
-              Any Available
-            </button>
-            {stylists.map((stylist) => {
-              const isSelected = formData.stylist_id === stylist.id
-              return (
-                <button
-                  key={stylist.id}
-                  onClick={() => updateForm({ stylist_id: stylist.id, stylist_name: stylist.name })}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-150 ${
-                    isSelected
-                      ? 'gradient-brand text-white border-transparent shadow-md'
-                      : 'bg-card border-border text-foreground hover:border-primary/40'
-                  }`}
-                  id={`stylist-${stylist.id}`}
-                >
-                  {stylist.name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Date picker strip */}
       <div>
         <Label className="text-sm font-semibold mb-3 block">Select Date</Label>
@@ -239,10 +182,9 @@ export function StepSchedule({ formData, updateForm, onNext, onBack }: Props) {
       {canContinue && formData.service && (
         <div className="bg-muted/50 rounded-xl px-5 py-4 text-sm space-y-1">
           <p className="font-semibold text-xs uppercase tracking-wide text-muted-foreground mb-2">Booking Summary</p>
-          <p><span className="text-muted-foreground">Service:</span> {formData.service.name}</p>
+          <p><span className="text-muted-foreground">Service:</span> {formData.service.service_name}</p>
           <p><span className="text-muted-foreground">Date:</span> {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : ''}</p>
           <p><span className="text-muted-foreground">Time:</span> {formatSlot(formData.booking_time)}</p>
-          <p><span className="text-muted-foreground">Stylist:</span> {formData.stylist_name || 'Any Available'}</p>
         </div>
       )}
 

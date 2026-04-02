@@ -19,14 +19,16 @@ export interface Profile {
 }
 
 export interface Service {
-  id: string
-  name: string
-  description: string | null
-  category: ServiceCategory
-  duration_min: number
-  price: number
-  is_active: boolean
-  created_at: string
+  service_id: string;
+  service_name: string;
+  description?: string;
+  price: number;
+  price_type: 'fixed' | 'starting';
+  duration: any; // PostgreSQL INTERVAL
+  category: string;
+  status: 'available' | 'unavailable';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Promotion {
@@ -55,40 +57,42 @@ export interface Stylist {
 
 export interface Booking {
   id: string
-  profile_id: string | null
-  guest_name: string | null
-  guest_phone: string | null
-  guest_email: string | null
+  profile_id?: string | null
+  guest_name: string
+  guest_phone?: string | null
+  guest_email?: string | null
   service_id: string
-  stylist_name: string | null
-  stylist_id: string | null
+  stylist_name?: string | null
+  stylist_id?: string | null
   booking_date: string
   booking_time: string
   status: BookingStatus
-  notes: string | null
+  notes?: string | null
   is_walkin: boolean
-  promotion_id: string | null
+  promotion_id?: string | null
   created_at: string
-  updated_at: string
+  updated_at?: string
   // Joined fields
-  service?: Service
-  profile?: Profile
-  payment?: Payment
-  promotion?: Promotion
-  stylist?: Stylist
+  service?: Partial<Service> & { name?: string }
+  profile?: Partial<Profile>
+  payment?: Partial<Payment>
+  promotion?: Partial<Promotion>
+  stylist?: Partial<Stylist>
 }
 
 export interface Payment {
   id: string
-  booking_id: string
+  booking_id?: string
+  reservation_id?: string
+  walkin_id?: string
   method: PaymentMethod
   amount: number
   status: PaymentStatus
-  xendit_invoice_id: string | null
-  xendit_invoice_url: string | null
-  paid_at: string | null
+  xendit_invoice_id?: string | null
+  xendit_invoice_url?: string | null
+  paid_at?: string | null
   created_at: string
-  updated_at: string
+  updated_at?: string
 }
 
 // Booking wizard state

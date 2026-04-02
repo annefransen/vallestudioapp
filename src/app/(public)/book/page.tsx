@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, ChevronRight, Scissors, Calendar, User, CreditCard, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import type { Service, BookingFormData } from '@/types'
+import type { Service, BookingFormData, ServiceCategory } from '@/types'
 
 // Step imports
 import { StepService } from '@/components/booking/step-service'
@@ -42,7 +42,7 @@ function BookContent() {
   const supabase = createClient()
 
   // Pre-select category from URL param
-  const categoryParam = searchParams.get('category') as Service['category'] | null
+  const categoryParam = searchParams.get('category') as ServiceCategory | null
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -73,7 +73,7 @@ function BookContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted/40 to-background pt-20 pb-16 px-4">
+    <div className="min-h-screen bg-linear-to-br from-muted/40 to-background pt-20 pb-16 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
@@ -176,7 +176,7 @@ function BookContent() {
 export default function BookPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen pt-20 flex items-center justify-center bg-gradient-to-br from-muted/40 to-background">
+      <div className="min-h-screen pt-20 flex items-center justify-center bg-linear-to-br from-muted/40 to-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     }>

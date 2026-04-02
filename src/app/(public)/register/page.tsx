@@ -62,7 +62,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/50 to-background px-4 py-24">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-muted/50 to-background px-4 py-24">
       <div className="w-full max-w-md">
         <motion.div
           initial={{ opacity: 0, y: 24 }}

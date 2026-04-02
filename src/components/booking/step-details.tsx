@@ -30,10 +30,6 @@ const guestSchema = z.object({
 type GuestForm = z.infer<typeof guestSchema>
 
 export function StepDetails({ formData, updateForm, onNext, onBack, isLoggedIn }: Props) {
-  const [promoCode, setPromoCode] = useState(formData.promo_code)
-  const [promoLoading, setPromoLoading] = useState(false)
-  const [appliedPromo, setAppliedPromo] = useState<Promotion | null>(null)
-  const [promoError, setPromoError] = useState('')
   const [profileLoaded, setProfileLoaded] = useState(false)
   const supabase = createClient()
 
@@ -54,15 +50,16 @@ export function StepDetails({ formData, updateForm, onNext, onBack, isLoggedIn }
         if (!user) return
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, phone')
-          .eq('id', user.id)
+          .select('first_name, last_name, phone')
+          .eq('profile_id', user.id)
           .single()
         if (profile) {
-          setValue('guest_name', profile.full_name)
+          const fullName = `${profile.first_name} ${profile.last_name}`.trim()
+          setValue('guest_name', fullName)
           if (profile.phone) setValue('guest_phone', profile.phone)
           setValue('guest_email', user.email ?? '')
           updateForm({
-            guest_name: profile.full_name,
+            guest_name: fullName,
             guest_phone: profile.phone ?? '',
             guest_email: user.email ?? '',
           })
@@ -71,54 +68,6 @@ export function StepDetails({ formData, updateForm, onNext, onBack, isLoggedIn }
       })
     }
   }, [isLoggedIn])
-
-  const applyPromo = async () => {
-    if (!promoCode.trim()) return
-    setPromoLoading(true)
-    setPromoError('')
-    setAppliedPromo(null)
-
-    const { data: promo, error } = await supabase
-      .from('promotions')
-      .select('*')
-      .eq('code', promoCode.toUpperCase())
-      .eq('is_active', true)
-      .gte('valid_to', new Date().toISOString().split('T')[0])
-      .single()
-
-    if (error || !promo) {
-      setPromoError('Invalid or expired promo code')
-      setPromoLoading(false)
-      return
-    }
-
-    // Check max uses
-    if (promo.max_uses !== null && promo.uses_count >= promo.max_uses) {
-      setPromoError('Promo code has reached its usage limit')
-      setPromoLoading(false)
-      return
-    }
-
-    // Check minimum amount
-    const servicePrice = formData.service?.price ?? 0
-    if (servicePrice < promo.min_amount) {
-      setPromoError(`Minimum order of ₱${promo.min_amount} required for this promo`)
-      setPromoLoading(false)
-      return
-    }
-
-    setAppliedPromo(promo)
-    updateForm({ promo_code: promoCode.toUpperCase() })
-    toast.success(`Promo applied! ${promo.discount_type === 'percent' ? `${promo.discount_value}% off` : `₱${promo.discount_value} off`}`)
-    setPromoLoading(false)
-  }
-
-  const removePromo = () => {
-    setAppliedPromo(null)
-    setPromoCode('')
-    setPromoError('')
-    updateForm({ promo_code: '' })
-  }
 
   const onSubmit = (data: GuestForm) => {
     updateForm({
@@ -190,60 +139,6 @@ export function StepDetails({ formData, updateForm, onNext, onBack, isLoggedIn }
           onChange={(e) => updateForm({ notes: e.target.value })}
           className="resize-none"
         />
-      </div>
-
-      {/* Promo code */}
-      <div className="space-y-2">
-        <Label htmlFor="promo_code">
-          <Tag className="w-3.5 h-3.5 inline mr-1" />
-          Promo Code <span className="text-muted-foreground font-normal">(optional)</span>
-        </Label>
-
-        {appliedPromo ? (
-          <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-            <div className="flex items-center gap-2 text-sm text-green-700">
-              <CheckCircle2 className="w-4 h-4" />
-              <span className="font-semibold">{appliedPromo.code}</span>
-              <span>—</span>
-              <span>
-                {appliedPromo.discount_type === 'percent'
-                  ? `${appliedPromo.discount_value}% off`
-                  : `₱${appliedPromo.discount_value} off`}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={removePromo}
-              className="text-green-600 hover:text-red-500 transition-colors"
-              aria-label="Remove promo"
-            >
-              <XCircle className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <Input
-              id="promo_code"
-              placeholder="Enter promo code"
-              value={promoCode}
-              onChange={(e) => {
-                setPromoCode(e.target.value)
-                setPromoError('')
-              }}
-              className={promoError ? 'border-destructive uppercase' : 'uppercase'}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={applyPromo}
-              disabled={promoLoading || !promoCode.trim()}
-              className="shrink-0"
-            >
-              {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
-            </Button>
-          </div>
-        )}
-        {promoError && <p className="text-xs text-destructive">{promoError}</p>}
       </div>
 
       {!isLoggedIn && (

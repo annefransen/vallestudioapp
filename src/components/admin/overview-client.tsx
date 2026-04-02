@@ -140,7 +140,7 @@ export function AdminOverviewClient({ stats }: { stats: Stats }) {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="text-sm font-semibold text-primary">
-                      ₱{booking.service?.price?.toLocaleString()}
+                      ₱{(booking.service?.price ?? 0).toLocaleString()}
                     </span>
                     <Badge variant="secondary" className={`text-xs ${config.className}`}>
                       <StatusIcon className="w-3 h-3 mr-1" />

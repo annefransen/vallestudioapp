@@ -55,19 +55,13 @@ function formatTime(time: string) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${period}`
 }
 
-function calcDiscount(price: number, formData: BookingFormData): number {
-  // If we had the promotion object stored we'd use it — for now return 0
-  return 0
-}
-
 export function StepPayment({ formData, updateForm, onBack }: Props) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   const basePrice = formData.service?.price ?? 0
-  const discount = calcDiscount(basePrice, formData)
-  const total = Math.max(0, basePrice - discount)
+  const total = basePrice
 
   const handleBook = async () => {
     setLoading(true)
@@ -86,11 +80,9 @@ export function StepPayment({ formData, updateForm, onBack }: Props) {
           guest_phone: formData.guest_phone,
           guest_email: formData.guest_email || null,
           service_id: formData.service_id,
-          stylist_name: formData.stylist_name || null,
           booking_date: formData.booking_date,
           booking_time: formData.booking_time,
           notes: formData.notes || null,
-          promo_code: formData.promo_code || null,
           payment_method: formData.payment_method,
           amount: total,
         }),
@@ -130,7 +122,7 @@ export function StepPayment({ formData, updateForm, onBack }: Props) {
               <Scissors className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-sm">{formData.service?.name}</p>
+              <p className="font-semibold text-sm">{formData.service?.service_name}</p>
               <Badge variant="secondary" className={`text-xs category-${formData.service?.category}`}>
                 {formData.service?.category}
               </Badge>
@@ -158,13 +150,6 @@ export function StepPayment({ formData, updateForm, onBack }: Props) {
               {formData.booking_time ? formatTime(formData.booking_time) : '—'}
             </div>
 
-            {formData.stylist_name && (
-              <>
-                <div className="text-muted-foreground">Stylist</div>
-                <div className="font-medium text-right">{formData.stylist_name}</div>
-              </>
-            )}
-
             <div className="text-muted-foreground">Client</div>
             <div className="font-medium text-right">{formData.guest_name}</div>
             <div className="text-muted-foreground">Phone</div>
@@ -174,20 +159,8 @@ export function StepPayment({ formData, updateForm, onBack }: Props) {
           <Separator />
 
           <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Service price</span>
-              <span>{formatPrice(basePrice)}</span>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between text-green-600">
-                <span>
-                  Promo ({formData.promo_code})
-                </span>
-                <span>− {formatPrice(discount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-bold text-base pt-1 border-t border-border">
-              <span>Total</span>
+            <div className="flex justify-between font-bold text-base pt-1">
+              <span>Total Amount</span>
               <span className="text-primary">{formatPrice(total)}</span>
             </div>
           </div>

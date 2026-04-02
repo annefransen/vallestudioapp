@@ -47,9 +47,16 @@ export default function PaymentsPage() {
       .from('payments')
       .select(`
         *,
-        booking:bookings(
-          guest_name, guest_phone, booking_date, booking_time,
-          service:services(name, price)
+        reservation:reservation_id (
+          reservation_date, start_time,
+          profiles (first_name, last_name, phone),
+          guests (first_name, last_name, phone),
+          booking_items (services(service_name, price))
+        ),
+        walkins:walkin_id (
+          walkin_date, start_time,
+          guests (first_name, last_name, phone),
+          booking_items (services(service_name, price))
         )
       `)
       .order('created_at', { ascending: false })
@@ -59,7 +66,56 @@ export default function PaymentsPage() {
     }
 
     const { data, error } = await query
-    if (!error) setPayments((data as unknown as PaymentWithBooking[]) ?? [])
+    if (!error && data) {
+      const normalized = data.map((p: any) => {
+        let guestName = '—'
+        let guestPhone = '—'
+        let date = ''
+        let time = ''
+        let serviceObj = null
+
+        if (p.reservation) {
+          const res = p.reservation
+          guestName = res.profiles ? `${res.profiles.first_name || ''} ${res.profiles.last_name || ''}`.trim() : res.guests ? `${res.guests.first_name || ''} ${res.guests.last_name || ''}`.trim() : 'Guest'
+          guestPhone = res.guests?.phone || res.profiles?.phone || '—'
+          date = res.reservation_date
+          if (res.start_time) {
+            const d = new Date(res.start_time)
+            time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+          }
+          const s = res.booking_items?.[0]?.services
+          if (s) serviceObj = { name: s.service_name, price: s.price }
+        } else if (p.walkins) {
+          const w = p.walkins
+          guestName = w.guests ? `${w.guests.first_name || ''} ${w.guests.last_name || ''}`.trim() : 'Walk-in'
+          guestPhone = w.guests?.phone || '—'
+          date = w.walkin_date
+          if (w.start_time) {
+            const d = new Date(w.start_time)
+            time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+          }
+          const s = w.booking_items?.[0]?.services
+          if (s) serviceObj = { name: s.service_name, price: s.price }
+        }
+
+        return {
+          id: p.payment_id,
+          method: p.payment_method,
+          status: p.status,
+          amount: p.amount,
+          created_at: p.created_at,
+          paid_at: p.paid_at,
+          booking: {
+            guest_name: guestName,
+            guest_phone: guestPhone,
+            booking_date: date,
+            booking_time: time,
+            service: serviceObj
+          }
+        }
+      })
+      setPayments(normalized as any[])
+    }
     setLoading(false)
   }
 
@@ -70,7 +126,7 @@ export default function PaymentsPage() {
     const { error } = await supabase
       .from('payments')
       .update({ status: 'paid', paid_at: new Date().toISOString() })
-      .eq('id', paymentId)
+      .eq('payment_id', paymentId)
 
     if (error) {
       toast.error('Failed to update payment')

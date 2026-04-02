@@ -1,10 +1,10 @@
-import { Navbar } from '@/components/shared/navbar'
-import { Footer } from '@/components/shared/footer'
+import { Navbar } from "@/components/shared/navbar";
+import { Footer } from "@/components/shared/footer";
 
 export default function PublicLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <>
@@ -12,5 +12,5 @@ export default function PublicLayout({
       <main className="flex-1">{children}</main>
       <Footer />
     </>
-  )
+  );
 }

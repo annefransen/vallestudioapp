@@ -23,12 +23,71 @@ function ConfirmationContent() {
     if (!bookingId) { setLoading(false); return }
     const supabase = createClient()
     supabase
-      .from('bookings')
-      .select('*, service:services(*), payment:payments(*)')
-      .eq('id', bookingId)
+      .from('reservation')
+      .select(`
+        *,
+        profiles (*),
+        guests (*),
+        booking_items (*, services(*)),
+        payments (*)
+      `)
+      .eq('reservation_id', bookingId)
       .single()
-      .then(({ data }) => {
-        setBooking(data)
+      .then(({ data, error }) => {
+        if (data && !error) {
+          const res = data as any
+          const guestName = res.profiles 
+            ? `${res.profiles.first_name || ''} ${res.profiles.last_name || ''}`.trim() 
+            : res.guests 
+              ? `${res.guests.first_name || ''} ${res.guests.last_name || ''}`.trim()
+              : 'Guest'
+          
+          const guestPhone = res.guests?.phone || res.profiles?.phone || ''
+          const service = res.booking_items?.[0]?.services
+          const payment = res.payments?.[0]
+          
+          const d = new Date(res.start_time)
+          const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+
+          const normalized: Booking = {
+            id: res.reservation_id,
+            profile_id: res.profile_id,
+            guest_name: guestName,
+            guest_phone: guestPhone,
+            guest_email: res.guests?.email || res.profiles?.gmail || '',
+            service_id: res.booking_items?.[0]?.service_id || '',
+            stylist_name: res.stylist_id ? 'Stylist' : null, // placeholder or fetch name
+            stylist_id: res.stylist_id,
+            booking_date: res.reservation_date,
+            booking_time: timeStr,
+            status: res.status,
+            notes: res.notes,
+            is_walkin: false,
+            promotion_id: null,
+            created_at: res.created_at,
+            updated_at: res.updated_at,
+            service: service ? {
+              service_id: service.service_id,
+              service_name: service.service_name,
+              name: service.service_name, // for compatibility
+              category: service.category,
+              price: service.price,
+              price_type: service.price_type,
+              duration: service.duration,
+              status: service.status,
+              created_at: service.created_at,
+              updated_at: service.updated_at
+            } as any : undefined,
+            payment: payment ? {
+              id: payment.payment_id,
+              method: payment.payment_method,
+              amount: payment.amount,
+              status: payment.status,
+              paid_at: payment.paid_at
+            } as any : undefined
+          }
+          setBooking(normalized)
+        }
         setLoading(false)
       })
   }, [bookingId])
@@ -40,7 +99,7 @@ function ConfirmationContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-24 bg-gradient-to-br from-muted/40 to-background">
+    <div className="min-h-screen flex items-center justify-center px-4 py-24 bg-linear-to-br from-muted/40 to-background">
       <div className="max-w-md w-full">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -141,7 +200,7 @@ function ConfirmationContent() {
 export default function ConfirmationPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/40 to-background">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-muted/40 to-background">
         <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
       </div>
     }>

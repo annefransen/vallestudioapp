@@ -30,13 +30,26 @@ function formatTime(time: string) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${period}`
 }
 
-function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: string) => void }) {
+// We bypass the old Booking type to reflect the nested relational structure of the new 11-table schema.
+type UnifiedReservation = any
+
+function BookingCard({ booking, onCancel }: { booking: UnifiedReservation; onCancel: (id: string) => void }) {
   const status = booking.status
-  const config = STATUS_CONFIG[status]
+  const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.pending
   const StatusIcon = config.icon
-  const bookingDate = parseISO(booking.booking_date)
+  const bookingDate = parseISO(booking.reservation_date || new Date().toISOString())
   const isUpcoming = !isPast(bookingDate) || isToday(bookingDate)
   const canCancel = (status === 'pending' || status === 'confirmed') && isUpcoming
+
+  const mainService = booking.booking_items?.[0]?.services
+  const paymentRecord = booking.payments?.[0]
+
+  // Extract HH:MM out of TIMESTAMPTZ start_time
+  let displayTime = '00:00'
+  if (booking.start_time) {
+    const d = new Date(booking.start_time)
+    displayTime = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
 
   return (
     <Card className="border-border/50 hover:shadow-md transition-shadow duration-200">
@@ -47,9 +60,9 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: s
               <Scissors className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="font-semibold text-sm">{booking.service?.name}</p>
-              <Badge variant="secondary" className={`text-xs mt-0.5 category-${booking.service?.category}`}>
-                {booking.service?.category}
+              <p className="font-semibold text-sm">{mainService?.service_name || 'Salon Component'}</p>
+              <Badge variant="secondary" className={`text-xs mt-0.5 category-${mainService?.category || 'hair'}`}>
+                {mainService?.category || 'General'}
               </Badge>
             </div>
           </div>
@@ -66,23 +79,17 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: s
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
-            {formatTime(booking.booking_time)}
+            {formatTime(displayTime)}
           </div>
-          {booking.stylist_name && (
-            <div className="flex items-center gap-1.5 text-muted-foreground col-span-2">
-              <User className="w-3.5 h-3.5" />
-              Stylist: {booking.stylist_name}
-            </div>
-          )}
         </div>
 
-        {booking.payment && (
+        {paymentRecord && (
           <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">
-              Payment: {booking.payment.method.replace(/_/g, ' ')}
+            <span className="text-muted-foreground uppercase tracking-wider font-medium text-[10px]">
+              {paymentRecord.payment_method?.replace(/_/g, ' ')} Payment
             </span>
-            <span className={booking.payment.status === 'paid' ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
-              {booking.payment.status === 'paid' ? 'Paid' : 'Pending'} — ₱{booking.payment.amount.toLocaleString()}
+            <span className={paymentRecord.status === 'paid' || booking.payment_status === 'paid' ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
+              {paymentRecord.status === 'paid' || booking.payment_status === 'paid' ? 'Paid' : 'Pending'} — ₱{(Number(paymentRecord.amount) || 0).toLocaleString()}
             </span>
           </div>
         )}
@@ -92,7 +99,7 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: s
             variant="outline"
             size="sm"
             className="w-full mt-3 text-destructive border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
-            onClick={() => onCancel(booking.id)}
+            onClick={() => onCancel(booking.reservation_id)}
           >
             Cancel Appointment
           </Button>
@@ -103,8 +110,8 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: s
 }
 
 export default function CustomerDashboard() {
-  const [bookings, setBookings] = useState<Booking[]>([])
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [bookings, setBookings] = useState<UnifiedReservation[]>([])
+  const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -118,11 +125,11 @@ export default function CustomerDashboard() {
 
     const [bookingsRes, profileRes] = await Promise.all([
       supabase
-        .from('bookings')
-        .select('*, service:services(*), payment:payments(*)')
+        .from('reservation')
+        .select('*, booking_items(*, services(*)), payments(*)')
         .eq('profile_id', user.id)
-        .order('booking_date', { ascending: false }),
-      supabase.from('profiles').select('*').eq('id', user.id).single(),
+        .order('reservation_date', { ascending: false }),
+      supabase.from('profiles').select('*').eq('profile_id', user.id).single(),
     ])
 
     setBookings(bookingsRes.data ?? [])
@@ -132,9 +139,9 @@ export default function CustomerDashboard() {
 
   const handleCancel = async (bookingId: string) => {
     const { error } = await supabase
-      .from('bookings')
+      .from('reservation')
       .update({ status: 'cancelled' })
-      .eq('id', bookingId)
+      .eq('reservation_id', bookingId)
 
     if (error) {
       toast.error('Failed to cancel booking')
@@ -143,17 +150,17 @@ export default function CustomerDashboard() {
 
     toast.success('Booking cancelled successfully')
     setBookings(prev =>
-      prev.map(b => b.id === bookingId ? { ...b, status: 'cancelled' } : b)
+      prev.map(b => b.reservation_id === bookingId ? { ...b, status: 'cancelled' } : b)
     )
   }
 
   const upcoming = bookings.filter(b =>
     (b.status === 'pending' || b.status === 'confirmed') &&
-    !isPast(parseISO(b.booking_date))
+    b.reservation_date && !isPast(parseISO(b.reservation_date))
   )
   const past = bookings.filter(b =>
     b.status === 'completed' || b.status === 'cancelled' ||
-    b.status === 'no_show' || isPast(parseISO(b.booking_date))
+    b.status === 'no_show' || (b.reservation_date && isPast(parseISO(b.reservation_date)))
   )
 
   if (loading) {
@@ -165,7 +172,7 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted/30 to-background py-10 px-4">
+    <div className="min-h-screen bg-linear-to-br from-muted/30 to-background py-10 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <motion.div
@@ -176,7 +183,7 @@ export default function CustomerDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-heading font-bold">
-                Welcome back, {profile?.full_name?.split(' ')[0] ?? 'there'}! 👋
+                Welcome back, {profile?.first_name ?? 'there'}! 👋
               </h1>
               <p className="text-muted-foreground text-sm mt-1">Manage your appointments below.</p>
             </div>
@@ -237,7 +244,7 @@ export default function CustomerDashboard() {
               <div className="space-y-4">
                 {upcoming.map((booking, i) => (
                   <motion.div
-                    key={booking.id}
+                    key={booking.reservation_id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
@@ -258,7 +265,7 @@ export default function CustomerDashboard() {
               <div className="space-y-4">
                 {past.map((booking, i) => (
                   <motion.div
-                    key={booking.id}
+                    key={booking.reservation_id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}

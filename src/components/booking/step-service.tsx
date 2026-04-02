@@ -27,11 +27,17 @@ function formatPrice(price: number) {
   return `₱${price.toLocaleString('en-PH', { minimumFractionDigits: 0 })}`
 }
 
-function formatDuration(min: number) {
-  if (min < 60) return `${min} min`
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m ? `${h}h ${m}m` : `${h}h`
+function formatDuration(interval: string) {
+  if (!interval) return 'N/A'
+  const parts = interval.split(':')
+  if (parts.length >= 2) {
+    const h = parseInt(parts[0], 10)
+    const m = parseInt(parts[1], 10)
+    if (h > 0 && m > 0) return `${h}h ${m}m`
+    if (h > 0) return `${h}h`
+    if (m > 0) return `${m} min`
+  }
+  return interval
 }
 
 export function StepService({ formData, updateForm, onNext, initialCategory }: Props) {
@@ -45,7 +51,7 @@ export function StepService({ formData, updateForm, onNext, initialCategory }: P
     supabase
       .from('services')
       .select('*')
-      .eq('is_active', true)
+      .eq('status', 'available')
       .order('category')
       .order('price')
       .then(({ data }) => {
@@ -56,12 +62,12 @@ export function StepService({ formData, updateForm, onNext, initialCategory }: P
 
   const filtered = services.filter((s) => {
     const matchCat = category === 'all' || s.category === category
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase())
+    const matchSearch = s.service_name.toLowerCase().includes(search.toLowerCase())
     return matchCat && matchSearch
   })
 
   const handleSelect = (service: Service) => {
-    updateForm({ service_id: service.id, service })
+    updateForm({ service_id: service.service_id, service })
   }
 
   const canContinue = !!formData.service_id
@@ -108,10 +114,10 @@ export function StepService({ formData, updateForm, onNext, initialCategory }: P
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map((service) => {
-            const isSelected = formData.service_id === service.id
+            const isSelected = formData.service_id === service.service_id
             return (
               <button
-                key={service.id}
+                key={service.service_id}
                 onClick={() => handleSelect(service)}
                 className={`text-left rounded-xl border-2 p-5 transition-all duration-200 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   isSelected
@@ -119,7 +125,7 @@ export function StepService({ formData, updateForm, onNext, initialCategory }: P
                     : 'border-border bg-card hover:border-primary/40'
                 }`}
                 aria-pressed={isSelected}
-                id={`service-${service.id}`}
+                id={`service-${service.service_id}`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="space-y-1">
@@ -129,7 +135,7 @@ export function StepService({ formData, updateForm, onNext, initialCategory }: P
                     >
                       {service.category}
                     </Badge>
-                    <h3 className="font-semibold text-sm leading-snug">{service.name}</h3>
+                    <h3 className="font-semibold text-sm leading-snug">{service.service_name}</h3>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
                     isSelected ? 'border-primary bg-primary' : 'border-border'
@@ -145,9 +151,10 @@ export function StepService({ formData, updateForm, onNext, initialCategory }: P
                 <div className="flex items-center justify-between">
                   <span className="text-base font-bold text-primary">
                     {formatPrice(service.price)}
+                    {service.price_type === 'starting' && <span className="text-xs ml-1 text-muted-foreground">starting</span>}
                   </span>
                   <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                    ~{formatDuration(service.duration_min)}
+                    ~{formatDuration(service.duration)}
                   </span>
                 </div>
               </button>
@@ -161,8 +168,11 @@ export function StepService({ formData, updateForm, onNext, initialCategory }: P
         <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-5 py-4">
           <div>
             <p className="text-xs text-muted-foreground">Selected</p>
-            <p className="font-semibold text-sm">{formData.service.name}</p>
-            <p className="text-primary font-bold">{formatPrice(formData.service.price)}</p>
+            <p className="font-semibold text-sm">{formData.service.service_name}</p>
+            <p className="text-primary font-bold">
+              {formatPrice(formData.service.price)}
+              {formData.service.price_type === 'starting' && <span className="text-xs ml-1 text-muted-foreground">starting</span>}
+            </p>
           </div>
           <Button
             onClick={onNext}

@@ -21,6 +21,19 @@ import { createClient } from '@/lib/supabase/client'
 import type { Service, ServiceCategory } from '@/types'
 import { toast } from 'sonner'
 
+function parseInterval(intervalStr: string) {
+  if (!intervalStr) return 0
+  // Supabase PG intervals often return "01:00:00" string formats
+  const [h, m] = intervalStr.split(':').map(Number)
+  return ((h || 0) * 60) + (m || 0)
+}
+
+function formatInterval(minutes: number) {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`
+}
+
 const schema = z.object({
   name: z.string().min(2, 'Name required'),
   description: z.string().optional(),
@@ -31,6 +44,16 @@ const schema = z.object({
 })
 type FormData = z.infer<typeof schema>
 
+export type AdminService = {
+  id: string
+  name: string
+  description: string | null
+  category: ServiceCategory
+  duration_min: number
+  price: number
+  is_active: boolean
+}
+
 const CATEGORIES: { value: ServiceCategory; label: string; emoji: string }[] = [
   { value: 'hair', label: 'Hair', emoji: '✂️' },
   { value: 'nails', label: 'Nails', emoji: '💅' },
@@ -38,10 +61,10 @@ const CATEGORIES: { value: ServiceCategory; label: string; emoji: string }[] = [
 ]
 
 export default function ServicesPage() {
-  const [services, setServices] = useState<Service[]>([])
+  const [services, setServices] = useState<AdminService[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState<Service | null>(null)
+  const [editing, setEditing] = useState<AdminService | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const supabase = createClient()
 
@@ -52,7 +75,18 @@ export default function ServicesPage() {
 
   const loadServices = async () => {
     const { data } = await supabase.from('services').select('*').order('category').order('price')
-    setServices(data ?? [])
+    if (data) {
+      const mapped = data.map((s: any) => ({
+        id: s.service_id,
+        name: s.service_name,
+        description: s.description,
+        category: s.category as ServiceCategory,
+        duration_min: parseInterval(s.duration),
+        price: Number(s.price),
+        is_active: s.status === 'available'
+      }))
+      setServices(mapped)
+    }
     setLoading(false)
   }
 
@@ -64,7 +98,7 @@ export default function ServicesPage() {
     setOpen(true)
   }
 
-  const openEdit = (service: Service) => {
+  const openEdit = (service: AdminService) => {
     setEditing(service)
     reset({
       name: service.name,
@@ -79,12 +113,23 @@ export default function ServicesPage() {
 
   const onSubmit = async (data: FormData) => {
     setSubmitting(true)
+    
+    const dbPayload = {
+      service_name: data.name,
+      description: data.description,
+      category: data.category,
+      price: data.price,
+      price_type: 'standard',
+      duration: formatInterval(data.duration_min),
+      status: data.is_active ? 'available' : 'unavailable'
+    }
+
     if (editing) {
-      const { error } = await supabase.from('services').update(data).eq('id', editing.id)
+      const { error } = await supabase.from('services').update(dbPayload).eq('service_id', editing.id)
       if (error) { toast.error('Failed to update service'); setSubmitting(false); return }
       toast.success('Service updated')
     } else {
-      const { error } = await supabase.from('services').insert(data)
+      const { error } = await supabase.from('services').insert(dbPayload)
       if (error) { toast.error('Failed to add service'); setSubmitting(false); return }
       toast.success('Service added')
     }
@@ -93,20 +138,21 @@ export default function ServicesPage() {
     loadServices()
   }
 
-  const toggleActive = async (service: Service) => {
+  const toggleActive = async (service: AdminService) => {
+    const newStatus = service.is_active ? 'unavailable' : 'available'
     const { error } = await supabase
       .from('services')
-      .update({ is_active: !service.is_active })
-      .eq('id', service.id)
+      .update({ status: newStatus })
+      .eq('service_id', service.id)
     if (!error) {
-      toast.success(service.is_active ? 'Service deactivated' : 'Service activated')
+      toast.success(newStatus === 'available' ? 'Service activated' : 'Service deactivated')
       setServices(prev => prev.map(s => s.id === service.id ? { ...s, is_active: !s.is_active } : s))
     }
   }
 
   const deleteService = async (id: string) => {
     if (!confirm('Delete this service? This cannot be undone.')) return
-    const { error } = await supabase.from('services').delete().eq('id', id)
+    const { error } = await supabase.from('services').delete().eq('service_id', id)
     if (error) { toast.error('Cannot delete service with existing bookings'); return }
     toast.success('Service deleted')
     setServices(prev => prev.filter(s => s.id !== id))
@@ -115,7 +161,7 @@ export default function ServicesPage() {
   const grouped = CATEGORIES.reduce((acc, cat) => {
     acc[cat.value] = services.filter(s => s.category === cat.value)
     return acc
-  }, {} as Record<ServiceCategory, Service[]>)
+  }, {} as Record<ServiceCategory, AdminService[]>)
 
   return (
     <div className="space-y-6">
@@ -125,7 +171,14 @@ export default function ServicesPage() {
           <p className="text-muted-foreground text-sm mt-1">Manage salon services and pricing</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button />}></DialogTrigger>
+          <DialogTrigger
+            render={
+              <Button className="gradient-brand text-white border-0">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Service
+              </Button>
+            }
+          />
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>{editing ? 'Edit Service' : 'Add New Service'}</DialogTitle>
