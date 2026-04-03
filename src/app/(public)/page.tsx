@@ -6,8 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { AboutSection } from "@/components/home/about-section";
 import { ServicesSection } from "@/components/home/services-section";
-import { PortfolioSection } from "@/components/home/portfolio-section";
-import { TeamSection } from "@/components/home/team-section";
+import { GallerySection } from "@/components/home/gallery-section";
 import { FaqSection } from "@/components/home/faq-section";
 import { CtaSection } from "@/components/home/cta-section";
 
@@ -42,8 +41,7 @@ export default function HomePage() {
       <main className="min-h-screen">
         <AboutSection />
         <ServicesSection />
-        <PortfolioSection />
-        <TeamSection />
+        <GallerySection />
         <FaqSection />
         <CtaSection />
       </main>

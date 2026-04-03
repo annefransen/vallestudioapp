@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 type Staff = {
   name: string;
@@ -27,54 +30,63 @@ const team: Staff[] = [
 
 export function TeamSection() {
   return (
-    <section id="team" className="bg-[#f7f8f9] py-32 px-6 sm:px-12 lg:px-24">
-      <div className="max-w-[1200px] mx-auto">
-        <div className="text-center mb-24">
-          <h2 className="text-4xl md:text-6xl font-sans font-bold tracking-tight text-[#1a1a1a] mb-4">
-            MEET THE TEAM
+    <section id="team" className="relative bg-[#FAF9F6] py-24 md:py-32 px-6 sm:px-12 lg:px-24 overflow-hidden">
+      {/* Subtle Texture Overlay */}
+      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#000000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}></div>
+      
+      <div className="max-w-[1400px] mx-auto text-center relative z-10">
+        {/* Header - Staggered Slide Up */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="mb-20 font-sans"
+        >
+          <h4 className="text-[10px] font-bold tracking-[0.3em] text-[#3D2B1F]/50 uppercase mb-4">
+            Valle Studio Team
+          </h4>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1a1a1a]">
+            Crafted by <span className="italic font-normal text-[#3D2B1F]/70">calm hands</span>
           </h2>
-          <p className="text-gray-500 font-sans max-w-lg mx-auto">
-            The talented professionals behind your best look.
-          </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-          {team.map((member) => (
-            <div 
-              key={member.name} 
-              className="bg-white rounded-[2rem] p-4 shadow-[0_4px_24px_rgba(0,0,0,0.04)] flex flex-col group transition-transform duration-300 hover:-translate-y-2"
-            >
-              {/* Image Container */}
-              <div className="relative w-full h-[350px] overflow-hidden rounded-[1.5rem] mb-6 bg-gray-100 shrink-0">
-                <Image
-                  src={member.image}
-                  alt={member.name}
-                  fill
-                  className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-              </div>
-
-              {/* Text Layout */}
-              <div className="w-full px-4 pb-4 flex flex-col h-full flex-1">
-                <div className="mb-6">
-                  <h3 className="text-2xl font-sans font-bold text-[#1a1a1a] tracking-tight mb-1">
+        {/* Team Grid - Staggered Entry Animation */}
+        <div className="max-w-[1250px] mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 lg:gap-14">
+            {team.map((member, index) => (
+              <motion.div 
+                key={member.name} 
+                className="flex flex-col group items-center text-center"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ 
+                  duration: 0.8, 
+                  delay: index * 0.15, // Staggered entrance timing
+                  ease: "easeOut" 
+                }}
+              >
+                <div className="relative w-full aspect-square overflow-hidden rounded-lg mb-8 bg-white shadow-xl shadow-gray-200/50 transition-transform duration-500 group-hover:scale-[1.01]">
+                  <Image
+                    src={member.image}
+                    alt={member.name}
+                    fill
+                    className="object-cover object-center grayscale hover:grayscale-0 transition-all duration-700"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                </div>
+                <div className="space-y-2 font-sans">
+                  <h3 className="text-xl font-extrabold text-[#1a1a1a] tracking-tight">
                     {member.name}
                   </h3>
-                  <p className="text-sm font-medium text-gray-500 leading-relaxed">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed">
                     {member.role}
                   </p>
                 </div>
-
-                {/* Bottom Row */}
-                <div className="flex items-center justify-end pt-4 border-t border-gray-100 mt-auto w-full">
-                  <button className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-6 py-2.5 rounded-full text-sm font-semibold transition-colors flex items-center gap-1">
-                    Book <span className="text-lg leading-none">+</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </section>

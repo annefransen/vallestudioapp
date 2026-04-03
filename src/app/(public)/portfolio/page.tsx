@@ -1,43 +1,35 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { ImageGallery } from "@/components/ui/image-gallery";
 
 const galleryImages = [
-  "/img/hero-valle.png",
-  "/img/AgnesCoprada-staff.jpg",
-  "/img/JovieDultra-staff.jpg",
-  "/img/PrincessAntonio-staff.jpg",
-  "/img/hero-va11e.png",
-  "/img/hero-valle.png",
-  "/img/AgnesCoprada-staff.jpg",
-  "/img/JovieDultra-staff.jpg",
-  "/img/PrincessAntonio-staff.jpg",
-  "/img/hero-valle.png",
-  "/img/AgnesCoprada-staff.jpg",
-  "/img/JovieDultra-staff.jpg",
-  "/img/PrincessAntonio-staff.jpg",
-  "/img/hero-va11e.png",
-  "/img/hero-valle.png",
-  "/img/AgnesCoprada-staff.jpg",
-  "/img/JovieDultra-staff.jpg",
-  "/img/PrincessAntonio-staff.jpg",
+  "/gallery/hair-1.png",
+  "/gallery/hair-2.png",
+  "/gallery/hair-3.png",
+  "/gallery/hair-4.png",
+  "/gallery/hair-5.png",
+  "/gallery/hair-6.png",
+  "/gallery/hair-7.png",
+  "/gallery/nails-1.png",
+  "/gallery/nails-2.png",
+  "/gallery/nails-3.png",
+  "/gallery/nails-4.png",
+  "/gallery/nails-5.png",
+  "/gallery/nails-6.png",
+  "/gallery/nails-7.png",
+  "/gallery/nails-8.png",
 ];
 
 export default function PortfolioPage() {
   return (
     <div className="min-h-screen bg-white">
       <main className="py-20 px-6 sm:px-12 lg:px-24 max-w-[1400px] mx-auto">
-        {/* New Title Row */}
-        <div className="flex items-center justify-between mb-16">
-          <div className="flex items-center gap-4">
-            <h1 className="text-4xl md:text-5xl font-sans font-bold text-[#1a1a1a]">Team Portfolio</h1>
-            <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-semibold text-gray-500">
-              32
-            </span>
-          </div>
+        {/* Header Row */}
+        <div className="flex items-center justify-between mb-20">
+          <h1 className="text-4xl md:text-5xl font-sans font-bold text-[#1a1a1a]">Team Portfolio</h1>
           <Link 
             href="/"
             className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-all hover:rotate-90"
@@ -46,23 +38,8 @@ export default function PortfolioPage() {
           </Link>
         </div>
 
-        {/* Masonry/Flexible Grid */}
-        <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-          {galleryImages.map((src, idx) => (
-            <div 
-              key={idx} 
-              className="relative overflow-hidden rounded-2xl group cursor-zoom-in break-inside-avoid"
-            >
-              <Image
-                src={src}
-                alt={`Gallery ${idx + 1}`}
-                width={800}
-                height={idx % 2 === 0 ? 1000 : 600}
-                className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-          ))}
-        </div>
+        {/* Dynamic Animated Gallery */}
+        <ImageGallery images={galleryImages} />
       </main>
     </div>
   );
