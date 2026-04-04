@@ -2,8 +2,12 @@
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function Footer() {
+  const pathname = usePathname();
+  if (pathname === "/book") return null;
+
   return (
     <footer className="bg-[#2e2721] text-[#beb9b7] pt-25 pb-5 px-6 sm:px-12 lg:px-24 font-sans select-none cursor-default">
       <div className="max-w-[1400px] mx-auto">

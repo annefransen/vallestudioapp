@@ -26,7 +26,7 @@ export function GallerySection() {
   return (
     <section
       id="gallery"
-      className="bg-[#faf9f6] py-20 md:py-24 px-6 sm:px-12 lg:px-16"
+      className="bg-[#f3efee] py-20 md:py-24 px-6 sm:px-12 lg:px-16"
     >
       <div className="max-w-[1400px] mx-auto">
         {/* Header */}

@@ -53,7 +53,7 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="font-sans font-bold text-white text-[12vw] sm:text-[10vh] md:text-[12vh] leading-[1.1] mb-12 drop-shadow-xl tracking-tighter"
+            className="font-sans font-bold text-white text-[12vw] sm:text-[10vh] md:text-[12vh] leading-[1.1] mb-10 drop-shadow-xl tracking-tighter"
           >
             Where Beauty <br />
             Meets <span className="italic">Artistry</span>
@@ -67,7 +67,7 @@ export default function HomePage() {
             transition={{ delay: 0.2 }}
             className="text-white/90 text-base sm:text-lg md:text-xl font-light tracking-wide leading-relaxed max-w-3xl"
           >
-            We believe beauty is personal. That&apos;s why every service at Valle Studio is tailored to bring out your unique style and confidence.
+            You&apos;re not here to be made over. You&apos;re here to remember. This is where beauty becomes personal. Powerful Alive.
           </motion.p>
         </div>
 
