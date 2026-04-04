@@ -43,29 +43,29 @@ export function FaqSection() {
   };
 
   return (
-    <section id="faq" className="bg-[#faf9f6] py-20 md:py-24 px-6 sm:px-12 lg:px-24">
+    <section id="faq" className="bg-[#1a1a1a] py-20 md:py-24 px-6 sm:px-12 lg:px-24">
       <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row gap-16 lg:gap-55 md:justify-center">
         
         {/* Left Column - Title & Info */}
         <div className="md:w-5/12 lg:w-1/3">
           <div className="mb-12">
-            <h2 className="text-5xl md:text-6xl font-sans font-bold text-[#1a1a1a] leading-[1.05] tracking-tighter whitespace-pre-line select-none cursor-default">
+            <h2 className="text-5xl md:text-6xl font-sans font-bold text-[#f3efee] leading-[1.05] tracking-tighter whitespace-pre-line select-none cursor-default">
               Everything you{"\n"}<span className="italic">might wonder.</span>
             </h2>
             <div className="mt-8 space-y-4 select-none cursor-default">
-              <p className="font-sans text-[15px] font-bold text-[#1a1a1a]">Got more questions?</p>
+              <p className="font-sans text-[15px] font-bold text-[#f3efee]">Got more questions?</p>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6 text-[#1a1a1a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <svg className="w-6 h-6 text-[#f3efee]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  <span className="text-[15px] text-[#1a1a1a] font-medium">0908 863 2831</span>
+                  <span className="text-[15px] text-[#f3efee] font-medium">0908 863 2831</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <svg className="w-6 h-6 text-[#1a1a1a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <svg className="w-6 h-6 text-[#f3efee]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-[15px] text-[#1a1a1a] font-medium">vallestudiosalon@gmail.com</span>
+                  <span className="text-[15px] text-[#f3efee] font-medium">vallestudiosalon@gmail.com</span>
                 </div>
               </div>
 
@@ -96,10 +96,10 @@ export function FaqSection() {
                     onClick={() => toggleFaq(idx)}
                     className="w-full flex items-start text-left py-5 focus:outline-none group cursor-pointer"
                   >
-                    <span className="text-[#3D2B1F] text-xl leading-none mr-6 font-medium mt-0.5 w-4 shrink-0 transition-transform duration-300">
+                    <span className="text-[#f3efee] text-xl leading-none mr-6 font-medium mt-0.5 w-4 shrink-0 transition-transform duration-300">
                       {isOpen ? "−" : "+"}
                     </span>
-                    <span className="text-lg font-sans font-semibold text-[#1a1a1a] group-hover:text-[#3D2B1F] transition-colors leading-snug">
+                    <span className="text-lg font-sans font-semibold text-[#f3efee] group-hover:text-[#f3efee] transition-colors leading-snug">
                       {faq.question}
                     </span>
                   </button>
@@ -112,7 +112,7 @@ export function FaqSection() {
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="pl-10 pb-8 pr-4 text-[#1a1a1a] text-[17px] font-sans leading-relaxed select-none cursor-default">
+                        <div className="pl-10 pb-8 pr-4 text-[#f3efee] text-[17px] font-sans leading-relaxed select-none cursor-default">
                           {faq.answer}
                         </div>
                       </motion.div>

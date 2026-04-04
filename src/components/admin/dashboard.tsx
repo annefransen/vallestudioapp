@@ -34,7 +34,7 @@ function formatTime(time: string) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${period}`
 }
 
-export function AdminOverviewClient({ stats }: { stats: Stats }) {
+export function AdminDashboard({ stats }: { stats: Stats }) {
   const kpis = [
     {
       label: "Today's Bookings",

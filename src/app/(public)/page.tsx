@@ -4,11 +4,11 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { AboutSection } from "@/components/home/about-section";
 import { ServicesSection } from "@/components/home/services-section";
 import { GallerySection } from "@/components/home/gallery-section";
 import { FaqSection } from "@/components/home/faq-section";
 import { CtaSection } from "@/components/home/cta-section";
+import { HairBlowerIcon } from "@/components/shared/navbar";
 
 export default function HomePage() {
   return (
@@ -26,20 +26,64 @@ export default function HomePage() {
           />
         </div>
 
+        {/* Hero Content */}
+        <div className="relative z-10 flex flex-col items-center text-center max-w-5xl px-6">
+          {/* Icon */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mb-4"
+          >
+            <HairBlowerIcon className="w-10 h-10 text-white/80" />
+          </motion.div>
+
+          {/* Label */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-white/70 uppercase mb-8"
+          >
+            Valle Studio
+          </motion.p>
+
+          {/* Heading */}
+          <motion.h1 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="font-sans font-bold text-white text-[12vw] sm:text-[10vh] md:text-[12vh] leading-[1.1] mb-12 drop-shadow-xl tracking-tighter"
+          >
+            Where Beauty <br />
+            Meets <span className="italic">Artistry</span>
+          </motion.h1>
+
+          {/* Subtext */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="text-white/90 text-base sm:text-lg md:text-xl font-light tracking-wide leading-relaxed max-w-3xl"
+          >
+            We believe beauty is personal. That&apos;s why every service at Valle Studio is tailored to bring out your unique style and confidence.
+          </motion.p>
+        </div>
+
         {/* Scroll indicator */}
         <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10"
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
-          <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center pt-2">
-            <div className="w-1 h-2 rounded-full bg-white/50" />
+          <div className="w-6 h-10 rounded-full border-2 border-white/20 flex items-start justify-center pt-2">
+            <div className="w-1 h-2 rounded-full bg-white/40" />
           </div>
         </motion.div>
       </section>
 
       <main className="min-h-screen">
-        <AboutSection />
         <ServicesSection />
         <GallerySection />
         <FaqSection />

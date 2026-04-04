@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek } from 'date-fns'
-import { AdminOverviewClient } from '@/components/admin/overview-client'
+import { AdminDashboard } from '@/components/admin/dashboard'
 
 async function getDashboardStats() {
   const supabase = await createClient()
@@ -128,5 +128,5 @@ async function getDashboardStats() {
 
 export default async function AdminOverviewPage() {
   const stats = await getDashboardStats()
-  return <AdminOverviewClient stats={stats} />
+  return <AdminDashboard stats={stats} />
 }
