@@ -61,7 +61,7 @@ export function GallerySection() {
             );
 
             return isLast ? (
-              <Link key={idx} href="/portfolio" className="block">
+              <Link key={idx} href="/gallery" className="block">
                 {content}
               </Link>
             ) : (

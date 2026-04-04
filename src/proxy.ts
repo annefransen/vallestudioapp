@@ -65,8 +65,8 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Redirect logged-in users away from login/register
-  if ((pathname === '/login' || pathname === '/register') && user) {
+  // Redirect logged-in users away from login
+  if (pathname === '/login' && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)

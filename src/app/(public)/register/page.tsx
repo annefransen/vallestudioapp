@@ -1,238 +1,107 @@
+// REGISTRATION PAGE
+
 "use client"
 
-import { useState, Suspense } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Eye, EyeOff, Scissors, Loader2, ArrowRight } from "lucide-react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import React from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import { ChevronLeftIcon, Grid2x2PlusIcon } from "lucide-react"
+import Link from "next/link"
+import { Particles } from "@/components/ui/particles"
 
-const schema = z.object({
-  full_name: z.string().min(2, "Name must be at least 2 characters"),
-  phone: z.string().regex(/^(\+63|0)\d{10}$/, "Enter a valid Philippine phone number"),
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirm_password: z.string(),
-}).refine((d) => d.password === d.confirm_password, {
-  message: "Passwords don't match",
-  path: ["confirm_password"],
-})
-type FormData = z.infer<typeof schema>
+const GoogleIcon = (props: React.ComponentProps<"svg">) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    <g>
+      <path d="M12.479,14.265v-3.279h11.049c0.108,0.571,0.164,1.247,0.164,1.979c0,2.46-0.672,5.502-2.84,7.669   C18.744,22.829,16.051,24,12.483,24C5.869,24,0.308,18.613,0.308,12S5.869,0,12.483,0c3.659,0,6.265,1.436,8.223,3.307L18.392,5.62   c-1.404-1.317-3.307-2.341-5.913-2.341C7.65,3.279,3.873,7.171,3.873,12s3.777,8.721,8.606,8.721c3.132,0,4.916-1.258,6.059-2.401   c0.927-0.927,1.537-2.251,1.777-4.059L12.479,14.265z" />
+    </g>
+  </svg>
+)
 
-function RegisterContent() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
-
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  })
-
-  const onSubmit = async (data: FormData) => {
-    setLoading(true)
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          full_name: data.full_name,
-          phone: data.phone,
-        },
-      },
-    })
-
-    if (error) {
-      toast.error(error.message)
-      setLoading(false)
-      return
-    }
-
-    toast.success("Account created! Welcome to Valle Studio.")
-    router.push("/dashboard")
-    router.refresh()
-  }
-
-  return (
-    <div className="min-h-screen bg-[#faf9f6] text-[#1a1a1a] font-sans selection:bg-black selection:text-white flex items-center justify-center px-6 py-24 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="fixed -bottom-64 -left-64 w-[500px] h-[500px] bg-primary/2 rounded-full blur-[120px] pointer-events-none" />
-      <div className="fixed -top-64 -right-64 w-[500px] h-[500px] bg-primary/2 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="w-full max-w-[480px] relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1] }}
-        >
-          {/* Header */}
-          <div className="text-center mb-10">
-            <Link href="/" className="inline-flex flex-col items-center group mb-8">
-              <div className="w-14 h-14 rounded-2xl border border-border/40 bg-white shadow-sm flex items-center justify-center transition-all duration-500 group-hover:border-foreground/20 group-hover:shadow-md">
-                <Scissors className="w-6 h-6" strokeWidth={1.5} />
-              </div>
-              <span className="mt-4 text-[11px] font-bold tracking-[0.3em] uppercase opacity-40 group-hover:opacity-100 transition-opacity">
-                Valle Studio
-              </span>
-            </Link>
-            <h1 className="text-5xl font-serif font-medium tracking-tight mb-3">
-              Join the <span className="italic">studio</span>.
-            </h1>
-            <p className="text-muted-foreground/70 leading-relaxed max-w-[340px] mx-auto text-sm">
-              Create an account for a seamless booking experience and exclusive hair care rewards.
-            </p>
-          </div>
-
-          <Card className="border-border/40 bg-white/40 backdrop-blur-md shadow-2xl shadow-black/[0.03] rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-border/60">
-            <CardContent className="p-8 sm:p-10">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 text-left">
-                <div className="space-y-1.5">
-                  <Label htmlFor="full_name" className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground/80 pl-1">
-                    Full Name
-                  </Label>
-                  <Input
-                    id="full_name"
-                    placeholder="Maria Santos"
-                    {...register("full_name")}
-                    className={cn(
-                      "h-12 rounded-2xl bg-white/60 border-border/40 focus:border-foreground/20 transition-all duration-300 placeholder:opacity-50",
-                      errors.full_name && "border-destructive/30"
-                    )}
-                  />
-                  {errors.full_name && <p className="text-[10px] font-semibold text-destructive/80 pl-1">{errors.full_name.message}</p>}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground/80 pl-1">
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phone"
-                    placeholder="09XX XXX XXXX"
-                    {...register("phone")}
-                    className={cn(
-                      "h-12 rounded-2xl bg-white/60 border-border/40 focus:border-foreground/20 transition-all duration-300 placeholder:opacity-50",
-                      errors.phone && "border-destructive/30"
-                    )}
-                  />
-                  {errors.phone && <p className="text-[10px] font-semibold text-destructive/80 pl-1">{errors.phone.message}</p>}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground/80 pl-1">
-                    Email Address
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    {...register("email")}
-                    className={cn(
-                      "h-12 rounded-2xl bg-white/60 border-border/40 focus:border-foreground/20 transition-all duration-300 placeholder:opacity-50",
-                      errors.email && "border-destructive/30"
-                    )}
-                  />
-                  {errors.email && <p className="text-[10px] font-semibold text-destructive/80 pl-1">{errors.email.message}</p>}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="password" title="Settings" className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground/80 pl-1">
-                      Password
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Min. 8 chars"
-                        {...register("password")}
-                        className={cn(
-                          "h-12 rounded-2xl bg-white/60 border-border/40 focus:border-foreground/20 pr-10 transition-all duration-300 placeholder:opacity-50 text-sm",
-                          errors.password && "border-destructive/30"
-                        )}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="confirm_password" title="Settings" className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground/80 pl-1">
-                      Confirm
-                    </Label>
-                    <Input
-                      id="confirm_password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Repeat it"
-                      {...register("confirm_password")}
-                      className={cn(
-                        "h-12 rounded-2xl bg-white/60 border-border/40 focus:border-foreground/20 transition-all duration-300 placeholder:opacity-50 text-sm",
-                        errors.confirm_password && "border-destructive/30"
-                      )}
-                    />
-                  </div>
-                </div>
-                {(errors.password || errors.confirm_password) && (
-                   <div className="space-y-1">
-                      {errors.password && <p className="text-[10px] font-semibold text-destructive/80 pl-1">{errors.password.message}</p>}
-                      {errors.confirm_password && <p className="text-[10px] font-semibold text-destructive/80 pl-1">{errors.confirm_password.message}</p>}
-                   </div>
-                )}
-                
-                <div className="flex items-center gap-2 pl-1 pt-2">
-                   <button 
-                    type="button" 
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="flex items-center gap-2 text-[10px] font-bold tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors group"
-                   >
-                     {showPassword ? <EyeOff className="w-3 h-3 transition-transform group-hover:scale-110" /> : <Eye className="w-3 h-3 transition-transform group-hover:scale-110" />}
-                     {showPassword ? "Hide" : "Show"} Passwords
-                   </button>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-14 rounded-2xl text-base font-medium mt-4 shadow-xl shadow-foreground/5 transition-all duration-500 hover:scale-[1.01] active:scale-[0.99]"
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      Create Account <ArrowRight className="w-4 h-4" />
-                    </span>
-                  )}
-                </Button>
-              </form>
-
-              <p className="mt-8 text-center text-sm text-muted-foreground/60">
-                Already have an account?{" "}
-                <Link href="/login" className="text-foreground font-semibold hover:underline">
-                  Sign in
-                </Link>
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    </div>
-  )
-}
+const GithubIcon = (props: React.ComponentProps<"svg">) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.042-1.416-4.042-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-60.86 8.199-11.386 0-6.627-5.373-12-12-12z" />
+  </svg>
+)
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin opacity-20" />
+    <div className="relative md:h-screen md:overflow-hidden w-full bg-background transition-colors duration-500 selection:bg-black selection:text-white">
+      <Particles
+        color="#666666"
+        quantity={120}
+        ease={20}
+        className="absolute inset-0"
+      />
+      
+      {/* Visual Background Accents */}
+      <div
+        aria-hidden
+        className="absolute inset-0 isolate -z-10 contain-strict opacity-25"
+      >
+        <div className="bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,var(--color-foreground,var(--color-foreground))_0,hsla(0,0%,55%,.02)_50%,var(--color-foreground,var(--color-foreground))_80%)] absolute top-0 left-0 h-320 w-140 -translate-y-87.5 -rotate-45 rounded-full blur-[80px]" />
+        <div className="bg-[radial-gradient(50%_50%_at_50%_50%,var(--color-foreground,var(--color-foreground))_0,var(--color-foreground,var(--color-foreground))_80%,transparent_100%)] absolute top-0 left-0 h-320 w-60 [translate:5%_-50%] -rotate-45 rounded-full blur-[60px]" />
       </div>
-    }>
-      <RegisterContent />
-    </Suspense>
+
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4">
+        {/* Navigation Home */}
+        <Button variant="ghost" className="absolute top-6 left-6 text-muted-foreground/60 hover:text-foreground transition-all group" asChild>
+          <Link href="/">
+            <ChevronLeftIcon className="me-2 size-4 group-hover:-translate-x-1 transition-transform" />
+            Home
+          </Link>
+        </Button>
+
+        {/* Auth Gateway Content */}
+        <div className="mx-auto space-y-10 sm:w-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center border border-border/40">
+                <Grid2x2PlusIcon className="size-5" />
+              </div>
+              <p className="text-sm font-bold uppercase tracking-[0.4em] opacity-40">Valle</p>
+            </div>
+            
+            <div className="space-y-2">
+              <h1 className="font-heading text-4xl font-medium tracking-tight">
+                Sign In <span className="italic font-serif">or</span> Join Now.
+              </h1>
+              <p className="text-muted-foreground/70 text-sm leading-relaxed max-w-[280px]">
+                Enter the premium studio. Manage your bookings and explore your style.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Button type="button" size="lg" className="w-full h-14 rounded-2xl bg-white text-black border border-border/40 hover:bg-muted/30 hover:border-border transition-all duration-300 shadow-xl shadow-black/2">
+              <GoogleIcon className="me-3 size-4" />
+              Continue with Google
+            </Button>
+            <Button type="button" size="lg" className="w-full h-14 rounded-2xl bg-black text-white hover:bg-black/90 transition-all duration-300 shadow-xl shadow-black/10">
+              <GithubIcon className="me-3 size-4" />
+              Continue with GitHub
+            </Button>
+          </div>
+
+          <div className="pt-8 border-t border-border/10">
+            <p className="text-muted-foreground/40 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
+              By clicking continue, you agree to our{' '}
+              <a href="#" className="text-foreground/60 hover:text-foreground underline underline-offset-4 decoration-border transition-colors">Terms</a>
+              {' '}and{' '}
+              <a href="#" className="text-foreground/60 hover:text-foreground underline underline-offset-4 decoration-border transition-colors">Privacy</a>
+              .
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

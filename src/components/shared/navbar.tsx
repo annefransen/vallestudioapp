@@ -34,7 +34,7 @@ export const HairBlowerIcon = (props: React.ComponentProps<"svg">) => (
 export function Navbar() {
   const pathname = usePathname(); 
 
-  if (pathname === "/portfolio" || pathname === "/book") return null;
+  if (pathname === "/gallery" || pathname === "/book" || pathname === "/login" || pathname === "/register" || pathname === "/dashboard") return null;
 
   const navLinkStyles = `text-[12px] sm:text-xs font-bold tracking-[0.2em] text-black uppercase hover:opacity-70 transition-all`;
 
@@ -45,7 +45,7 @@ export function Navbar() {
           {/* Left Side: Valle + Blower, Services, FAQ */}
           <div className="flex items-center gap-6 sm:gap-10 pl-0 z-10 w-1/2">
             <Link href="/" className="flex items-center gap-1.5 uppercase text-black font-semibold text-[12px] sm:text-xs tracking-[0.2em] hover:opacity-80 transition-opacity" style={{ fontFamily: "'Inter', sans-serif" }}>
-              <span>Valle</span>
+              <span>Valle Studio</span>
               {/* hair blower icon */}
               <HairBlowerIcon className="w-7 h-7 sm:w-8 sm:h-8 text-black" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
             </Link>
@@ -60,8 +60,8 @@ export function Navbar() {
 
           {/* Right Side: Sign in & Book Now */}
           <div className="flex items-center justify-end gap-6 sm:gap-10 pr-0 z-10 w-1/2">
-            <Link href="/login" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
-              Sign in
+            <Link href="/register" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
+              Sign In
             </Link>
             <Link href="/book" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
               Book Now
