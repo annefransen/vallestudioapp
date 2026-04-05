@@ -8,7 +8,6 @@ import { ServicesSection } from "@/components/home/services-section";
 import { GallerySection } from "@/components/home/gallery-section";
 import { FaqSection } from "@/components/home/faq-section";
 import { CtaSection } from "@/components/home/cta-section";
-import { HairBlowerIcon } from "@/components/shared/navbar";
 
 export default function HomePage() {
   return (
@@ -34,9 +33,7 @@ export default function HomePage() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             className="mb-4"
-          >
-            <HairBlowerIcon className="w-10 h-10 text-white/80" />
-          </motion.div>
+          ></motion.div>
 
           {/* Label */}
           <motion.p
@@ -44,12 +41,10 @@ export default function HomePage() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-white/70 uppercase mb-8"
-          >
-            Valle Studio
-          </motion.p>
+          ></motion.p>
 
           {/* Heading */}
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
@@ -67,7 +62,8 @@ export default function HomePage() {
             transition={{ delay: 0.2 }}
             className="text-white/90 text-base sm:text-lg md:text-xl font-light tracking-wide leading-relaxed max-w-3xl"
           >
-            You&apos;re not here to be made over. You&apos;re here to remember. This is where beauty becomes personal. Powerful Alive.
+            You&apos;re not here to be made over. You&apos;re here to remember.
+            This is where beauty becomes personal. Powerful Alive.
           </motion.p>
         </div>
 
