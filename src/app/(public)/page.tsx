@@ -27,7 +27,6 @@ export default function HomePage() {
 
         {/* Hero Content */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-5xl px-6">
-<<<<<<< HEAD
           {/* Icon */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -35,9 +34,6 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="mb-4"
           ></motion.div>
-=======
-
->>>>>>> 42d860d759cfb829a8864f31333428aba93ba60d
 
           {/* Label */}
           <motion.p
