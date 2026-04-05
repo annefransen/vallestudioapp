@@ -168,6 +168,7 @@ export function Navbar() {
                 const duration = 200; // ms
                 let startTime: number | null = null;
 
+<<<<<<< HEAD
                 function animation(currentTime: number) {
                   if (startTime === null) startTime = currentTime;
                   const timeElapsed = currentTime - startTime;
@@ -243,6 +244,15 @@ export function Navbar() {
                 />
               )}
               <span className="relative z-10">Book Now</span>
+=======
+          {/* Right Side: Sign in & Book Now */}
+          <div className="flex items-center justify-end gap-6 sm:gap-10 pr-0 z-10 w-1/2">
+            <Link href="/login" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
+              Login
+            </Link>
+            <Link href="/register" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
+              Book Now
+>>>>>>> 42d860d759cfb829a8864f31333428aba93ba60d
             </Link>
           </div>
         </div>
