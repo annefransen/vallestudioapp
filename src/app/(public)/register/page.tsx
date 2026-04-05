@@ -46,7 +46,7 @@ export default function RegisterPage() {
   return (
     <div className="relative md:h-screen md:overflow-hidden w-full bg-background transition-colors duration-500 selection:bg-black selection:text-white font-sans">
       <Particles
-        color="#2a2a2a"
+        color="#111118"
         quantity={180}
         ease={20}
         className="absolute inset-0"
@@ -60,11 +60,11 @@ export default function RegisterPage() {
         <div className="bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,var(--color-foreground,var(--color-foreground))_0,hsla(0,0%,55%,.02)_50%,var(--color-foreground,var(--color-foreground))_80%)] absolute top-0 left-0 h-320 w-140 -translate-y-87.5 -rotate-45 rounded-full blur-[80px]" />
         <div className="bg-[radial-gradient(50%_50%_at_50%_50%,var(--color-foreground,var(--color-foreground))_0,var(--color-foreground,var(--color-foreground))_80%,transparent_100%)] absolute top-0 left-0 h-320 w-60 [translate:5%_-50%] -rotate-45 rounded-full blur-[60px]" />
       </div>
-      
+
       {/* Navigation Home */}
       <Button 
         variant="ghost" 
-        className="absolute top-10 left-10 text-muted-foreground/60 hover:text-foreground transition-all group z-50" 
+        className="absolute top-10 left-10 text-[#111118] hover:text-[#111118]/80 hover:bg-transparent text-lg transition-all group z-50" 
         asChild
       >
         <Link href="/">

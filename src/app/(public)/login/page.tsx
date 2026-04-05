@@ -63,9 +63,9 @@ export default function LoginPage() {
 
 
       {/* Navigation Home */}
-      <Button variant="ghost" className="absolute top-8 left-8 text-muted-foreground/60 hover:text-foreground transition-all group z-50" asChild>
+      <Button variant="ghost" className="absolute top-10 left-10 text-[#111118] hover:text-[#111118]/80 hover:bg-transparent text-lg transition-all group z-50" asChild>
         <Link href="/">
-          <ChevronLeftIcon className="me-2 size-4 group-hover:-translate-x-1 transition-transform" />
+          <ChevronLeftIcon className="me-3 size-5 group-hover:-translate-x-1 transition-transform" />
           Home
         </Link>
       </Button>
