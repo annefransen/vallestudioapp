@@ -60,10 +60,10 @@ export function Navbar() {
 
           {/* Right Side: Sign in & Book Now */}
           <div className="flex items-center justify-end gap-6 sm:gap-10 pr-0 z-10 w-1/2">
-            <Link href="/register" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
-              Sign In
+            <Link href="/login" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
+              Login
             </Link>
-            <Link href="/book" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
+            <Link href="/register" className={navLinkStyles} style={{ fontFamily: "'Inter', sans-serif" }}>
               Book Now
             </Link>
           </div>

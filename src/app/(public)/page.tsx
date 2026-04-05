@@ -8,7 +8,6 @@ import { ServicesSection } from "@/components/home/services-section";
 import { GallerySection } from "@/components/home/gallery-section";
 import { FaqSection } from "@/components/home/faq-section";
 import { CtaSection } from "@/components/home/cta-section";
-import { HairBlowerIcon } from "@/components/shared/navbar";
 
 export default function HomePage() {
   return (
@@ -28,15 +27,7 @@ export default function HomePage() {
 
         {/* Hero Content */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-5xl px-6">
-          {/* Icon */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mb-4"
-          >
-            <HairBlowerIcon className="w-10 h-10 text-white/80" />
-          </motion.div>
+
 
           {/* Label */}
           <motion.p
