@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { GlassFilter, GlassEffect } from "@/components/ui/liquid-glass";
 import {
   House,
@@ -97,12 +97,16 @@ export function Navbar() {
   const hoverLogo = "bg-white/20";
   const font = "var(--font-sans)";
 
+<<<<<<< HEAD
   // All clickable nav items (buttons + links) share the same pill via layoutId
   const desktopNavItems = [
     { id: "services", label: "Services", type: "scroll" as const },
     { id: "gallery", label: "Gallery", type: "scroll" as const },
     { id: "faq", label: "FAQ", type: "scroll" as const },
   ];
+=======
+
+>>>>>>> cbe5cbb2a36563ad889cc2613682bd27ae36476e
 
   return (
     <>

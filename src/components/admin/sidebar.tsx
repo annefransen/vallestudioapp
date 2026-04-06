@@ -34,7 +34,7 @@ export function AdminSidebar() {
     router.push('/login')
   }
 
-  const NavContent = () => (
+  const renderNavContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-5 border-b border-sidebar-border">
@@ -90,7 +90,7 @@ export function AdminSidebar() {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-60 bg-sidebar shrink-0 h-screen sticky top-0">
-        <NavContent />
+        {renderNavContent()}
       </aside>
 
       {/* Mobile top bar */}
@@ -114,7 +114,7 @@ export function AdminSidebar() {
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-30" onClick={() => setMobileOpen(false)}>
           <div className="absolute left-0 top-14 bottom-0 w-64 bg-sidebar shadow-2xl" onClick={e => e.stopPropagation()}>
-            <NavContent />
+            {renderNavContent()}
           </div>
           <div className="absolute inset-0 bg-black/50 -z-10" />
         </div>
