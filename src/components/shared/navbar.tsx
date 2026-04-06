@@ -212,7 +212,7 @@ export function Navbar() {
           <div className="flex items-center justify-end gap-0.5 z-10 w-1/2">
             {/* Sign In */}
             <Link
-              href="/register"
+              href="/login"
               onMouseEnter={() => setHovered("register")}
               className={`relative px-3 py-1.5 rounded-full tracking-[0.2em] uppercase transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] text-sm ${textColor}`}
               style={{ fontFamily: font }}
@@ -229,7 +229,7 @@ export function Navbar() {
 
             {/* Book Now — solid pill CTA with shared hover */}
             <Link
-              href="/book"
+              href="/register"
               onMouseEnter={() => setHovered("book")}
               className={`relative inline-flex items-center justify-center tracking-[0.2em] uppercase rounded-full active:scale-95 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 scrolled

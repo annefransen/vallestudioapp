@@ -5,9 +5,14 @@ import Link from "next/link"
 import { 
   ChevronLeftIcon, 
   CalendarIcon, 
-  User 
+  User,
+  ArrowRight,
+  Mail,
+  Loader2,
+  CheckCircle2,
+  XCircle
 } from "lucide-react"
-import { REGEXP_ONLY_DIGITS } from "input-otp"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Particles } from "@/components/ui/particles"
@@ -22,16 +27,19 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "@/components/ui/interfaces-input-otp"
+  AnimatedInputOTP,
+  AnimatedInputOTPGroup,
+  AnimatedInputOTPSlot,
+} from "@/components/ui/otp-input"
 
 export default function RegisterPage() {
   const [step, setStep] = React.useState<"email" | "otp">("email")
   const [email, setEmail] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
+
+  const [otp, setOtp] = React.useState("")
+  const [otpStatus, setOtpStatus] = React.useState<"idle" | "verifying" | "success" | "error">("idle")
+  const router = useRouter()
 
   const handleProceed = () => {
     if (!email) return
@@ -40,6 +48,21 @@ export default function RegisterPage() {
     setTimeout(() => {
       setIsLoading(false)
       setStep("otp")
+    }, 1500)
+  }
+
+  const handleVerifyOtp = (code: string) => {
+    setOtpStatus("verifying")
+    // Simulate validation flow
+    setTimeout(() => {
+      if (code === "123456") {
+        setOtpStatus("success")
+        setTimeout(() => {
+          router.push("/dashboard") // Automatic proceed to account
+        }, 1500)
+      } else {
+        setOtpStatus("error")
+      }
     }, 1500)
   }
 
@@ -74,18 +97,17 @@ export default function RegisterPage() {
       </Button>
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4">
-        {/* Auth Gateway Content */}
-        <div className="mx-auto space-y-10 sm:w-sm animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="mx-auto space-y-10 sm:w-sm animate-in fade-in duration-1000">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <p className="text-[12px] font-semibold uppercase tracking-[0.5em] opacity-60">Valle</p>
+              <p className="text-[15px] text-[#2a2a2a] font-bold uppercase tracking-[0.2em] select-none cursor-default">Valle</p>
             </div>
             
             <div className="space-y-2">
-              <h1 className="font-sans text-6xl font-bold tracking-tight">
+              <h1 className="font-sans text-7xl font-bold tracking-tight select-none cursor-default">
                 Sign In <span className="italic">or</span> <br /> Book Now.
               </h1>
-              <p className="text-muted-foreground/70 text-md leading-relaxed max-w-[280px]">
+              <p className="font-sans font-semibold text-muted-foreground text-[20px] leading-relaxed max-w-[280px] select-none cursor-default">
                 Let the glamour unfold.
               </p>
             </div>
@@ -94,73 +116,111 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <Drawer onOpenChange={(open) => { if (!open) setStep("email") }}>
               <DrawerTrigger render={
-                <Button type="button" size="lg" className="w-full h-14 rounded-2 bg-[#d4d4d4] text-black border border-border/40 hover:bg-[#d4d4d4] hover:border-border transition-all duration-300 shadow-xl shadow-black/2">
-                  <User className="me-3 size-5 text-black" />
+                <Button type="button" size="lg" className="w-full h-14 rounded-[12px] bg-[#d4d4d4] text-base font-semibold text-black border-border/40 hover:bg-[#d4d4d4]/90 hover:border-border transition-all duration-300 shadow-xl shadow-black/2 cursor-pointer">
+                  <User className="me-2 size-6 text-black" />
                   Create your account.
                 </Button>
               }>
+                {/* DRAWER CONTENT */}
                 Create your account.
               </DrawerTrigger>
               <DrawerPopup showBar position="bottom">
                 <div className="flex flex-col items-center justify-center py-10 px-6 space-y-8 min-h-[400px]">
                   {step === "email" ? (
-                    <div className="w-full max-w-xs space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                      <div className="text-center space-y-2">
-                        <DrawerTitle className="text-3xl font-bold tracking-tight">Sign In</DrawerTitle>
-                        <DrawerDescription className="text-muted-foreground">
-                          Enter your Gmail to receive a secure code.
+                    <div className="w-full max-w-xs space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                      <div className="text-center space-y-3">
+                        <DrawerTitle className="text-6xl font-sans font-bold tracking-tight select-none cursor-default">Sign In</DrawerTitle>
+                        <DrawerDescription className="text-[18px] font-sans text-muted-foreground select-none cursor-default"> 
+                          Sign up with your Gmail address.
                         </DrawerDescription>
                       </div>
 
                       <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest opacity-50 ml-1">Gmail Address</Label>
-                          <Input 
-                            id="email"
-                            type="email" 
-                            placeholder="yourname@gmail.com" 
-                            className="h-12 rounded-xl bg-muted/30 border-border/40 focus:ring-1 focus:ring-primary/20 transition-all"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                          />
+                        <div className="space-y-1">
+                          <Label htmlFor="email" className="text-[14px] font-semibold tracking-wide ml-1 -mt-2 mb-2 block">Gmail Address</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-black/40 pointer-events-none" />
+                            <Input 
+                              id="email"
+                              type="email" 
+                              spellCheck={false}
+                              placeholder="your@gmail.com" 
+                              className="h-12 rounded-[10px] bg-[#e0e0e0] border border-border/40 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-transparent text-[17px] font-medium text-black shadow-none cursor-pointer pl-10"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                            />
+                          </div>
                         </div>
                         <Button 
                           onClick={handleProceed}
                           disabled={isLoading || !email}
-                          className="w-full h-12 rounded-xl bg-black text-white hover:bg-black/90 transition-all shadow-lg shadow-black/10"
+                          className="w-full h-12 rounded-[10px] bg-[#2a2a2a] text-[16px] font-semibold text-white border-border/40 hover:bg-[#2a2a2a]/90 hover:border-border disabled:opacity-95 transition-all duration-300 shadow-xl shadow-black/2 cursor-pointer"
                         >
-                          {isLoading ? "Sending Code..." : "Proceed"}
+                          {isLoading ? "Sending Code..." : (
+                            <span className="flex items-center justify-center gap-2 ">
+                              Continue <ArrowRight className="size-4" />
+                            </span>
+                          )}
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full max-w-xs space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
-                      <div className="text-center space-y-2">
-                        <DrawerTitle className="text-3xl font-bold tracking-tight">Verify Code</DrawerTitle>
-                        <DrawerDescription className="text-muted-foreground">
+                    <div className="w-full max-w-xs space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 flex flex-col items-center">
+                      <div className="text-center space-y-3">
+                        <DrawerTitle className="text-7xl font-sans font-bold tracking-tight whitespace-nowrap">Verify Code</DrawerTitle>
+                        <DrawerDescription className="text-[16px] font-sans text-muted-foreground">
                           We&apos;ve sent a 6-digit code to <span className="text-foreground font-medium">{email}</span>
                         </DrawerDescription>
                       </div>
 
-                      <InputOTP maxLength={6} pattern={REGEXP_ONLY_DIGITS}>
-                        <InputOTPGroup>
-                          <InputOTPSlot index={0} />
-                          <InputOTPSlot index={1} />
-                          <InputOTPSlot index={2} />
-                        </InputOTPGroup>
-                        <InputOTPSeparator />
-                        <InputOTPGroup>
-                          <InputOTPSlot index={3} />
-                          <InputOTPSlot index={4} />
-                          <InputOTPSlot index={5} />
-                        </InputOTPGroup>
-                      </InputOTP>
+                      <div className="flex flex-col items-center gap-4 w-full">
+                        <AnimatedInputOTP 
+                          maxLength={6} 
+                          value={otp}
+                          onChange={(val) => {
+                            setOtp(val)
+                            if (otpStatus === "error") setOtpStatus("idle")
+                          }}
+                          onComplete={handleVerifyOtp}
+                          disabled={otpStatus === "verifying" || otpStatus === "success"}
+                        >
+                          <AnimatedInputOTPGroup>
+                            <AnimatedInputOTPSlot index={0} className={otpStatus === "error" ? "border-red-500! bg-red-50! text-red-600!" : otpStatus === "success" ? "border-green-500! bg-green-50! text-green-600!" : ""} />
+                            <AnimatedInputOTPSlot index={1} className={otpStatus === "error" ? "border-red-500! bg-red-50! text-red-600!" : otpStatus === "success" ? "border-green-500! bg-green-50! text-green-600!" : ""} />
+                            <AnimatedInputOTPSlot index={2} className={otpStatus === "error" ? "border-red-500! bg-red-50! text-red-600!" : otpStatus === "success" ? "border-green-500! bg-green-50! text-green-600!" : ""} />
+                          </AnimatedInputOTPGroup>
+                          <div className="w-3 flex items-center justify-center text-muted-foreground text-sm">—</div>
+                          <AnimatedInputOTPGroup>
+                            <AnimatedInputOTPSlot index={3} className={otpStatus === "error" ? "border-red-500! bg-red-50! text-red-600!" : otpStatus === "success" ? "border-green-500! bg-green-50! text-green-600!" : ""} />
+                            <AnimatedInputOTPSlot index={4} className={otpStatus === "error" ? "border-red-500! bg-red-50! text-red-600!" : otpStatus === "success" ? "border-green-500! bg-green-50! text-green-600!" : ""} />
+                            <AnimatedInputOTPSlot index={5} className={otpStatus === "error" ? "border-red-500! bg-red-50! text-red-600!" : otpStatus === "success" ? "border-green-500! bg-green-50! text-green-600!" : ""} />
+                          </AnimatedInputOTPGroup>
+                        </AnimatedInputOTP>
 
-                      <div className="text-center space-y-4 w-full">
-                        <p className="text-xs text-muted-foreground">
-                          Didn&apos;t receive a code? <button className="text-primary hover:underline font-medium">Resend</button>
+                        <div className="h-6 flex items-center justify-center animate-in fade-in transition-all">
+                          {otpStatus === "verifying" && (
+                            <div className="flex items-center gap-2 text-muted-foreground text-sm font-semibold">
+                              <Loader2 className="size-4 animate-spin" /> Verifying code...
+                            </div>
+                          )}
+                          {otpStatus === "error" && (
+                            <div className="flex items-center gap-2 text-red-500 text-[18px] font-semibold tracking-tight whitespace-nowrap animate-in slide-in-from-bottom-1">
+                              <XCircle className="size-6" /> Invalid verification code. Please try again.
+                            </div>
+                          )}
+                          {otpStatus === "success" && (
+                            <div className="flex items-center gap-2 text-green-600 text-[18px] font-semibold tracking-tight whitespace-nowrap animate-in slide-in-from-bottom-1">
+                              <CheckCircle2 className="size-4" /> Code verified successfully!
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-center space-y-3 w-full">
+                        <p className="text-[15px] text-muted-foreground">
+                          Didn&apos;t receive a code? <button className="text-[15px] text-[#2a2a2a] hover:underline font-semibold">Resend Code</button>
                         </p>
-                        <DrawerClose render={<Button variant="ghost" className="text-muted-foreground hover:text-foreground" />}>
+                        <DrawerClose render={<Button variant="ghost" className="text-[15px] text-muted-foreground hover:text-foreground" />}>
                           Cancel
                         </DrawerClose>
                       </div>
@@ -170,22 +230,12 @@ export default function RegisterPage() {
               </DrawerPopup>
             </Drawer>
 
-            <Button type="button" size="lg" className="w-full h-14 rounded-2 bg-[#2a2a2a] text-white hover:bg-[#2a2a2a]/90 transition-all duration-300 shadow-xl shadow-black/10" asChild>
+            <Button type="button" size="lg" className="w-full h-14 rounded-[12px] text-base font-semibold bg-[#2a2a2a] text-white hover:bg-[#2a2a2a]/90 transition-all duration-300 shadow-xl shadow-black/10" asChild>
               <Link href="/book">
-                <CalendarIcon className="me-3 size-4" />
+                <CalendarIcon className="me-2 size-5" />
                 Book Now
               </Link>
             </Button>
-          </div>
-
-          <div className="pt-5 border-t border-border/10">
-            <p className="text-muted-foreground/40 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-              By clicking continue, you agree to our{' '}
-              <a href="#" className="text-foreground/60 hover:text-foreground underline underline-offset-4 decoration-border transition-colors">Terms</a>
-              {' '}and{' '}
-              <a href="#" className="text-foreground/60 hover:text-foreground underline underline-offset-4 decoration-border transition-colors">Privacy</a>
-              .
-            </p>
           </div>
         </div>
       </div>

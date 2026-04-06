@@ -21,11 +21,11 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "@/components/ui/interfaces-input-otp"
+  AnimatedInputOTP as InputOTP,
+  AnimatedInputOTPGroup as InputOTPGroup,
+  AnimatedInputOTPSeparator as InputOTPSeparator,
+  AnimatedInputOTPSlot as InputOTPSlot,
+} from "@/components/ui/otp-input"
 
 export default function LoginPage() {
   const [step, setStep] = React.useState<"email" | "otp">("email")
