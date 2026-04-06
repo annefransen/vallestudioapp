@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { GlassFilter, GlassEffect } from "@/components/ui/liquid-glass";
 
 const SCROLL_THRESHOLD = 150;
@@ -82,17 +82,7 @@ export function Navbar() {
   const hoverLogo = "bg-white/20";
   const font = "var(--font-sans)";
 
-  // All clickable nav items (buttons + links) share the same pill via layoutId
-  const navItems = [
-    { id: "services", label: "Services", type: "scroll" as const },
-    { id: "faq", label: "FAQ", type: "scroll" as const },
-    {
-      id: "register",
-      label: "Sign In",
-      type: "link" as const,
-      href: "/register",
-    },
-  ];
+
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none">

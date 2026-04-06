@@ -105,7 +105,7 @@ export default function RegisterPage() {
             
             <div className="space-y-2">
               <h1 className="font-sans text-7xl font-bold tracking-tight select-none cursor-default">
-                Sign In <span className="italic">or</span> <br /> Book Now.
+                Sign Up <span className="italic">or</span> <br /> Book Now.
               </h1>
               <p className="font-sans font-semibold text-muted-foreground text-[20px] leading-relaxed max-w-[280px] select-none cursor-default">
                 Let the glamour unfold.
@@ -118,18 +118,18 @@ export default function RegisterPage() {
               <DrawerTrigger render={
                 <Button type="button" size="lg" className="w-full h-14 rounded-[12px] bg-[#d4d4d4] text-base font-semibold text-black border-border/40 hover:bg-[#d4d4d4]/90 hover:border-border transition-all duration-300 shadow-xl shadow-black/2 cursor-pointer">
                   <User className="me-2 size-6 text-black" />
-                  Create your account.
+                  Create your account now?
                 </Button>
               }>
                 {/* DRAWER CONTENT */}
-                Create your account.
+                Create your account now?
               </DrawerTrigger>
               <DrawerPopup showBar position="bottom">
                 <div className="flex flex-col items-center justify-center py-10 px-6 space-y-8 min-h-[400px]">
                   {step === "email" ? (
                     <div className="w-full max-w-xs space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
                       <div className="text-center space-y-3">
-                        <DrawerTitle className="text-6xl font-sans font-bold tracking-tight select-none cursor-default">Sign In</DrawerTitle>
+                        <DrawerTitle className="text-6xl font-sans font-bold tracking-tight select-none cursor-default">Sign Up</DrawerTitle>
                         <DrawerDescription className="text-[18px] font-sans text-muted-foreground select-none cursor-default"> 
                           Sign up with your Gmail address.
                         </DrawerDescription>
@@ -233,7 +233,7 @@ export default function RegisterPage() {
             <Button type="button" size="lg" className="w-full h-14 rounded-[12px] text-base font-semibold bg-[#2a2a2a] text-white hover:bg-[#2a2a2a]/90 transition-all duration-300 shadow-xl shadow-black/10" asChild>
               <Link href="/book">
                 <CalendarIcon className="me-2 size-5" />
-                Book Now
+                Book as guest
               </Link>
             </Button>
           </div>
