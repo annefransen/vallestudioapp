@@ -61,7 +61,7 @@ const CATEGORIES: { value: PromoCategory; label: string; emoji: string }[] = [
   { value: 'brows', label: 'Brows', emoji: '🪄' },
 ]
 
-export default function promosPage() {
+export default function PromosPage() {
   const [promos, setpromos] = useState<AdminPromo[]>([])
   const [loading, setLoading] = useState(true)
   const [open, setOpen] = useState(false)
@@ -168,7 +168,7 @@ export default function promosPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold">promos</h1>
+          <h1 className="text-[clamp(1.25rem,2vw+0.5rem,1.5rem)] font-heading font-bold">Promos</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage salon promos and pricing</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>

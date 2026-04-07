@@ -97,16 +97,12 @@ export function Navbar() {
   const hoverLogo = "bg-white/20";
   const font = "var(--font-sans)";
 
-<<<<<<< HEAD
   // All clickable nav items (buttons + links) share the same pill via layoutId
   const desktopNavItems = [
     { id: "services", label: "Services", type: "scroll" as const },
     { id: "gallery", label: "Gallery", type: "scroll" as const },
     { id: "faq", label: "FAQ", type: "scroll" as const },
   ];
-=======
-
->>>>>>> cbe5cbb2a36563ad889cc2613682bd27ae36476e
 
   return (
     <>
@@ -200,7 +196,7 @@ export function Navbar() {
                     : `text-sm px-5 py-2.5 bg-transparent text-black ${textSize}`
                 }`}
                 style={{ fontFamily: font }}
-              >
+              > 
                 {hovered === "book" && (
                   <motion.span
                     layoutId="nav-pill-desktop"
@@ -252,7 +248,7 @@ export function Navbar() {
                       />
                     )}
                     <Icon size={22} strokeWidth={1.5} />
-                    <span className="text-[10px] font-medium uppercase tracking-widest">
+                    <span className="text-[0.625rem] font-medium uppercase tracking-widest">
                       {item.label}
                     </span>
                   </button>
@@ -269,7 +265,7 @@ export function Navbar() {
                       />
                     )}
                     <Icon size={22} strokeWidth={1.5} />
-                    <span className="text-[10px] font-medium uppercase tracking-widest">
+                    <span className="text-[0.625rem] font-medium uppercase tracking-widest">
                       {item.label}
                     </span>
                   </Link>

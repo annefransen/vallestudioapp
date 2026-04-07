@@ -105,7 +105,7 @@ export default function BookPage() {
                 <div 
                   key={step.id} 
                   className={cn(
-                    "flex items-center gap-2 text-[11px] font-bold tracking-widest uppercase transition-all duration-300",
+                    "flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase transition-all duration-300",
                     currentStep === step.id ? "text-foreground" : "text-muted-foreground/40"
                   )}
                 >
@@ -122,7 +122,7 @@ export default function BookPage() {
           </div>
           
           <div className="flex items-center gap-4">
-             <span className="text-[10px] font-bold text-muted-foreground/60 tracking-widest uppercase sm:hidden">
+             <span className="text-[0.625rem] font-bold text-muted-foreground/60 tracking-widest uppercase sm:hidden">
               Step {currentStep} of {STEPS.length}
              </span>
              <button 

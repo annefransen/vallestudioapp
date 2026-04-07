@@ -15,7 +15,7 @@ export function Footer() {
           
           {/* Brand Column (Heading & Subtitle & Hours) */}
           <div className="flex flex-col">
-            <h2 className="text-[100px] font-heading font-black uppercase tracking-tighter mb-4 flex flex-col leading-[0.85] text-[#beb9b7]">
+            <h2 className="text-[clamp(3.5rem,8vw+2rem,6.25rem)] font-heading font-black uppercase tracking-tighter mb-4 flex flex-col leading-[0.85] text-[#beb9b7]">
               <span>Valle</span>
               <span className="opacity-70">Studio</span>
             </h2>
@@ -23,8 +23,8 @@ export function Footer() {
 
           {/* Column 2: Quick links */}
           <div className="font-sans lg:pl-30">
-            <h4 className="text-[17px] font-sans font-bold text-[#beb9b7] mb-6">Quick links</h4>
-            <ul className="space-y-4 text-[17px]">
+            <h4 className="text-[1.0625rem] font-sans font-bold text-[#beb9b7] mb-6">Quick links</h4>
+            <ul className="space-y-4 text-[1.0625rem]">
               <li><Link href="/#about" className="hover:opacity-70 transition-opacity">About us</Link></li>
               <li><Link href="/#services" className="hover:opacity-70 transition-opacity">Services</Link></li>
               <li><Link href="/#gallery" className="hover:opacity-70 transition-opacity">Gallery</Link></li>
@@ -34,8 +34,8 @@ export function Footer() {
 
           {/* Column 3: Contact us */}
           <div className="font-sans">
-            <h4 className="text-[17px] font-sans font-bold text-[#beb9b7] mb-6">Contact us</h4>
-            <ul className="space-y-4 text-[17px]">
+            <h4 className="text-[1.0625rem] font-sans font-bold text-[#beb9b7] mb-6">Contact us</h4>
+            <ul className="space-y-4 text-[1.0625rem]">
               <li className="flex items-center gap-3">
                 <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -59,15 +59,15 @@ export function Footer() {
           </div>
 
           <div className="font-sans">
-            <h4 className="text-[17px] font-sans font-bold text-[#beb9b7] mb-2">We&apos;re open:</h4>
+            <h4 className="text-[1.0625rem] font-sans font-bold text-[#beb9b7] mb-2">We&apos;re open:</h4>
             <div className="flex items-center gap-3 mb-8">
               <svg className="w-6 h-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-[17px]">Mon – Sun: 9:30AM – 7PM</p>
+              <p className="text-[1.0625rem]">Mon – Sun: 9:30AM – 7PM</p>
             </div>
 
-            <h4 className="text-[17px] font-sans font-bold text-[#beb9b7] mb-6">Follow us</h4>
+            <h4 className="text-[1.0625rem] font-sans font-bold text-[#beb9b7] mb-6">Follow us</h4>
             <div className="flex items-center gap-6">
               <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-70 transition-opacity">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -93,9 +93,9 @@ export function Footer() {
         </div>
 
         {/* Footer Bottom refined per latest request: line closer, larger text, no uppercase */}
-        <div className="pt-5 border-t border-[#beb9b7]/10 flex flex-col md:flex-row justify-between items-center gap-4 text-[13px] font-sans">
+        <div className="pt-5 border-t border-[#beb9b7]/10 flex flex-col md:flex-row justify-between items-center gap-4 text-[0.8125rem] font-sans">
           <p>© 2026 Valle Studio. All rights reserved.</p>
-          <Link href="/terms" className="hover:opacity-70 transition-opacity text-[13px]">User Terms & Conditions</Link>
+          <Link href="/terms" className="hover:opacity-70 transition-opacity text-[0.8125rem]">User Terms & Conditions</Link>
         </div>
       </div>
     </footer>
