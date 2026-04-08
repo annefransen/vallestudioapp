@@ -97,16 +97,12 @@ export function Navbar() {
   const hoverLogo = "bg-white/20";
   const font = "var(--font-sans)";
 
-<<<<<<< HEAD
   // All clickable nav items (buttons + links) share the same pill via layoutId
   const desktopNavItems = [
     { id: "services", label: "Services", type: "scroll" as const },
     { id: "gallery", label: "Gallery", type: "scroll" as const },
     { id: "faq", label: "FAQ", type: "scroll" as const },
   ];
-=======
-
->>>>>>> cbe5cbb2a36563ad889cc2613682bd27ae36476e
 
   return (
     <>
@@ -164,8 +160,8 @@ export function Navbar() {
                 <h2
                   className={`relative z-10 font-heading font-black uppercase tracking-tighter transition-all duration-500 ${
                     scrolled
-                      ? "text-white text-[clamp(1.5rem,4vw,2rem)]"
-                      : "text-[#beb9b7] text-[clamp(2.25rem,8vw,3rem)]"
+                      ? "text-white text-[clamp(1.5rem,4vw,1rem)]"
+                      : "text-[#beb9b7] text-[clamp(2.25rem,8vw,2rem)]"
                   }`}
                 >
                   Valle
