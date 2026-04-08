@@ -40,7 +40,7 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-[10px] sm:text-xs font-bold tracking-[0.3em] text-white/70 uppercase mb-8"
+            className="text-[0.625rem] sm:text-xs font-bold tracking-[0.3em] text-white/70 uppercase mb-8"
           ></motion.p>
 
           {/* Heading */}

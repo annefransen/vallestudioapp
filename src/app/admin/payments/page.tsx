@@ -144,7 +144,7 @@ export default function PaymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold">Payments</h1>
+        <h1 className="text-[clamp(1.25rem,2vw+0.5rem,1.5rem)] font-heading font-bold">Payments</h1>
         <p className="text-muted-foreground text-sm mt-1">Track and manage all payment transactions</p>
       </div>
 

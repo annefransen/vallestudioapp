@@ -199,7 +199,7 @@ export default function WalkInsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold">Walk-ins</h1>
+          <h1 className="text-[clamp(1.25rem,2vw+0.5rem,1.5rem)] font-heading font-bold">Walk-ins</h1>
           <p className="text-muted-foreground text-sm mt-1">Add and manage walk-in customers</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>

@@ -6,14 +6,13 @@ import { format, parseISO, isPast, isToday } from 'date-fns'
 import { motion } from 'framer-motion'
 import {
   Calendar, Clock, Scissors, ArrowRight, Plus,
-  CheckCircle2, XCircle, AlertCircle, Loader2, User
+  CheckCircle2, XCircle, AlertCircle, Loader2
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/client'
-import type { Booking, Profile } from '@/types'
 import { toast } from 'sonner'
 
 const STATUS_CONFIG = {
@@ -30,8 +29,22 @@ function formatTime(time: string) {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${period}`
 }
 
-// We bypass the old Booking type to reflect the nested relational structure of the new 11-table schema.
-type UnifiedReservation = any
+// Reflects the nested relational structure returned by Supabase for the reservation table.
+type ReservationService = { service_name: string; category: string }
+type ReservationBookingItem = { services: ReservationService }
+type ReservationPayment = { payment_method: string | null; status: string; amount: number | null }
+type ReservationProfile = { first_name: string; gmail: string }
+type UnifiedReservation = {
+  reservation_id: string
+  reservation_date: string | null
+  start_time: string | null
+  status: string
+  payment_status: string | null
+  profile_id: string
+  booking_items: ReservationBookingItem[]
+  payments: ReservationPayment[]
+  profiles?: ReservationProfile | null
+}
 
 function BookingCard({ booking, onCancel }: { booking: UnifiedReservation; onCancel: (id: string) => void }) {
   const status = booking.status
@@ -85,7 +98,7 @@ function BookingCard({ booking, onCancel }: { booking: UnifiedReservation; onCan
 
         {paymentRecord && (
           <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
-            <span className="text-muted-foreground uppercase tracking-wider font-medium text-[10px]">
+            <span className="text-muted-foreground uppercase tracking-wider font-medium text-[0.625rem]">
               {paymentRecord.payment_method?.replace(/_/g, ' ')} Payment
             </span>
             <span className={paymentRecord.status === 'paid' || booking.payment_status === 'paid' ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
@@ -111,31 +124,31 @@ function BookingCard({ booking, onCancel }: { booking: UnifiedReservation; onCan
 
 export default function CustomerDashboard() {
   const [bookings, setBookings] = useState<UnifiedReservation[]>([])
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<Record<string, string> | null>(null)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
+    const loadData = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const [bookingsRes, profileRes] = await Promise.all([
+        supabase
+          .from('reservation')
+          .select('*, booking_items(*, services(*)), payments(*)')
+          .eq('profile_id', user.id)
+          .order('reservation_date', { ascending: false }),
+        supabase.from('profiles').select('*').eq('profile_id', user.id).single(),
+      ])
+
+      setBookings(bookingsRes.data ?? [])
+      setProfile(profileRes.data)
+      setLoading(false)
+    }
+
     loadData()
-  }, [])
-
-  const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const [bookingsRes, profileRes] = await Promise.all([
-      supabase
-        .from('reservation')
-        .select('*, booking_items(*, services(*)), payments(*)')
-        .eq('profile_id', user.id)
-        .order('reservation_date', { ascending: false }),
-      supabase.from('profiles').select('*').eq('profile_id', user.id).single(),
-    ])
-
-    setBookings(bookingsRes.data ?? [])
-    setProfile(profileRes.data)
-    setLoading(false)
-  }
+  }, [supabase])
 
   const handleCancel = async (bookingId: string) => {
     const { error } = await supabase

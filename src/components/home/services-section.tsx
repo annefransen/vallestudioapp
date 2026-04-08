@@ -271,15 +271,15 @@ export function ServicesSection() {
             {leftColumn.map((service, idx) => (
               <div key={idx} className="flex flex-col">
                 <div className="flex justify-between items-end mb-1 select-none cursor-default">
-                  <span className="text-[17px] md:text-lg font-bold text-[#1a1a1a] font-sans">
+                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans">
                     {service.name}
                   </span>
-                  <span className="text-[17px] md:text-lg font-bold text-[#1a1a1a] font-sans tracking-tight">
+                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans tracking-tight">
                     ₱{service.price}
                   </span>
                 </div>
                 {service.description && (
-                  <p className="text-[15px] text-gray-500 font-medium leading-snug w-[85%] font-sans select-none cursor-default">
+                  <p className="text-[0.9375rem] text-gray-500 font-medium leading-snug w-[85%] font-sans select-none cursor-default">
                     {service.description}
                   </p>
                 )}
@@ -292,15 +292,15 @@ export function ServicesSection() {
             {rightColumn.map((service, idx) => (
               <div key={idx} className="flex flex-col">
                 <div className="flex justify-between items-end mb-1 select-none cursor-default">
-                  <span className="text-[17px] md:text-lg font-bold text-[#1a1a1a] font-sans">
+                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans">
                     {service.name}
                   </span>
-                  <span className="text-[17px] md:text-lg font-bold text-[#1a1a1a] font-sans tracking-tight">
+                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans tracking-tight">
                     ₱{service.price}
                   </span>
                 </div>
                 {service.description && (
-                  <p className="text-[15px] text-gray-500 font-medium leading-snug w-[85%] font-sans select-none cursor-default">
+                  <p className="text-[0.9375rem] text-gray-500 font-medium leading-snug w-[85%] font-sans select-none cursor-default">
                     {service.description}
                   </p>
                 )}

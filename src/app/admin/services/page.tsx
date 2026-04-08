@@ -167,7 +167,7 @@ export default function ServicesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold">Services</h1>
+          <h1 className="text-[clamp(1.25rem,2vw+0.5rem,1.5rem)] font-heading font-bold">Services</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage salon services and pricing</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>

@@ -1,4 +1,0 @@
-﻿src/app/(public)/login/page.tsx(24,3): error TS2305: Module '"@/components/ui/otp-input"' has no exported member 'InputOTP'.
-src/app/(public)/login/page.tsx(25,3): error TS2305: Module '"@/components/ui/otp-input"' has no exported member 'InputOTPGroup'.
-src/app/(public)/login/page.tsx(26,3): error TS2305: Module '"@/components/ui/otp-input"' has no exported member 'InputOTPSeparator'.
-src/app/(public)/login/page.tsx(27,3): error TS2305: Module '"@/components/ui/otp-input"' has no exported member 'InputOTPSlot'.

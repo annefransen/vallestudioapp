@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     // Find payment by xendit_invoice_id (stored in reference_number in the new schema)
     const { data: payment, error: findError } = await supabase
       .from('payments')
-      .select('payment_id, reservation_id')
+      .select('payment_id, reservation_id, status')
       .eq('reference_number', xenditInvoiceId)
       .single()
 
@@ -33,10 +33,21 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Payment not found' }, { status: 404 })
     }
 
-    const paymentStatus = status === 'PAID' || status === 'SETTLED' ? 'paid' : 'failed'
+    // Idempotency: if already paid, ignore
+    if (payment.status === 'paid') {
+      return Response.json({ success: true, message: 'Already processed as paid' })
+    }
+
+    const isSuccess = status === 'PAID' || status === 'SETTLED'
+    const isFailed = status === 'EXPIRED' || status === 'FAILED'
+    
+    // Default to pending unless strongly failed/paid
+    let paymentStatus = 'pending'
+    if (isSuccess) paymentStatus = 'paid'
+    if (isFailed) paymentStatus = 'failed'
 
     // Update payment status
-    await supabase
+    const { error: updateError } = await supabase
       .from('payments')
       .update({
         status: paymentStatus,
@@ -44,15 +55,24 @@ export async function POST(request: NextRequest) {
       })
       .eq('payment_id', payment.payment_id)
 
-    // Update reservation status
+    if (updateError) {
+      console.error('Failed to update payment row:', updateError)
+      return Response.json({ error: 'Database update failed' }, { status: 500 })
+    }
+
+    // Update reservation status and send email on success
     if (paymentStatus === 'paid') {
-      await supabase
+      const { error: resUpdateError } = await supabase
         .from('reservation')
         .update({ payment_status: 'paid', status: 'confirmed' })
         .eq('reservation_id', payment.reservation_id)
+        
+      if (resUpdateError) {
+        console.error('Failed to update reservation row:', resUpdateError)
+      }
 
-      // Fetch booking details for email
-      const { data: resData } = await supabase
+      // Fetch booking details for email (type safely cast to unknown first to satisfy strict TypeScript)
+      const { data: rawResData } = await supabase
         .from('reservation')
         .select(`
           reservation_id,
@@ -66,14 +86,22 @@ export async function POST(request: NextRequest) {
         `)
         .eq('reservation_id', payment.reservation_id)
         .single()
+        
+      const resData = rawResData as unknown as {
+        reservation_id: string
+        reservation_date: string
+        start_time: string
+        profiles?: { first_name: string; gmail: string } | null
+        guests?: { first_name: string; gmail: string } | null
+        booking_items?: Array<{ services?: { service_name: string } }>
+      } | null
 
       if (resData) {
-        let guestEmail = (resData.profiles as any)?.gmail || (resData.guests as any)?.gmail
-        let guestName = (resData.profiles as any)?.first_name || (resData.guests as any)?.first_name || 'Valued Client'
+        const guestEmail = resData.profiles?.gmail || resData.guests?.gmail
+        const guestName = resData.profiles?.first_name || resData.guests?.first_name || 'Valued Client'
         
         let serviceName = 'Salon Service'
         if (resData.booking_items && resData.booking_items.length > 0) {
-            // @ts-ignore
             serviceName = resData.booking_items[0].services?.service_name || serviceName
         }
 

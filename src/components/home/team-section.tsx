@@ -43,7 +43,7 @@ export function TeamSection() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="mb-20 font-sans"
         >
-          <h4 className="text-[10px] font-bold tracking-[0.3em] text-[#3D2B1F]/50 uppercase mb-4">
+          <h4 className="text-[0.625rem] font-bold tracking-[0.3em] text-[#3D2B1F]/50 uppercase mb-4">
             Valle Studio Team
           </h4>
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1a1a1a]">
@@ -80,7 +80,7 @@ export function TeamSection() {
                   <h3 className="text-xl font-extrabold text-[#1a1a1a] tracking-tight">
                     {member.name}
                   </h3>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed">
+                  <p className="text-[0.625rem] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed">
                     {member.role}
                   </p>
                 </div>

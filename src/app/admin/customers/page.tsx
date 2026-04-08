@@ -228,7 +228,7 @@ export default function CustomersPage() {
                                       <div>
                                         <div className="flex items-center gap-2">
                                           <p className="font-bold text-gray-900 dark:text-gray-100">{record.service}</p>
-                                          <Badge variant="outline" className="px-1.5 py-0 text-[10px] uppercase border font-semibold">{record.type}</Badge>
+                                          <Badge variant="outline" className="px-1.5 py-0 text-[0.625rem] uppercase border font-semibold">{record.type}</Badge>
                                         </div>
                                         <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-1">
                                           <Calendar className="w-3 h-3" /> {record.date} 

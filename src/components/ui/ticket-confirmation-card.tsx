@@ -35,7 +35,7 @@ const Barcode = ({ value }: { value: string }) => {
                     />
                 ))}
             </svg>
-            <p className="text-[10px] text-muted-foreground tracking-[0.8em] mt-3 font-mono uppercase">{value}</p>
+            <p className="text-[0.625rem] text-muted-foreground tracking-[0.8em] mt-3 font-mono uppercase">{value}</p>
         </div>
     );
 };
@@ -152,27 +152,27 @@ const AnimatedTicket = React.forwardRef<HTMLDivElement, TicketProps>(
 
               <div className="flex justify-between items-start gap-4">
                   <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                      <p className="text-[0.625rem] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1.5">
                         <Ticket className="w-3 h-3" /> Booking ID
                       </p>
                       <p className="font-mono text-sm tracking-tighter">{ticketId}</p>
                   </div>
                   <div className="text-right space-y-1">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">Total Amount</p>
+                      <p className="text-[0.625rem] text-muted-foreground uppercase tracking-widest font-semibold">Total Amount</p>
                       <p className="font-serif text-xl font-medium">{formattedAmount}</p>
                   </div>
               </div>
 
               <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-1">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                    <p className="text-[0.625rem] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1.5">
                       <Calendar className="w-3 h-3" /> Date & Time
                     </p>
                     <p className="text-sm font-medium">{formattedDate}</p>
                     <p className="text-sm text-muted-foreground">{time}</p>
                 </div>
                 <div className="space-y-1 text-right">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1.5 justify-end">
+                    <p className="text-[0.625rem] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1.5 justify-end">
                       <User className="w-3 h-3" /> Client
                     </p>
                     <p className="text-sm font-medium truncate">{cardHolder}</p>
