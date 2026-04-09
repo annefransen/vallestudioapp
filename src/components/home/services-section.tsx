@@ -3,178 +3,96 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 
+import { createClient } from "@/lib/supabase/client";
+import { Loader2, Clock, Tag, RefreshCw, Sparkles } from "lucide-react";
+
 type Service = {
+  id: string;
   name: string;
-  price: string;
+  price: number | null;
   description: string;
+  duration: string | null;
+  status: string;
 };
-
-const allServices: Service[] = [
-  // HAIR
-  {
-    name: "Hair Cut w/ Blow Dry",
-    price: "149",
-    description: "Basic haircut followed by blow drying for a clean finish.",
-  },
-  {
-    name: "Hair Wash / Dry & Cut",
-    price: "199",
-    description: "Hair washing, haircut, and blow dry styling.",
-  },
-  {
-    name: "Hair Spa + Cut",
-    price: "299",
-    description: "Deep conditioning hair treatment with relaxing haircut.",
-  },
-  {
-    name: "Hair Color",
-    price: "599 UP",
-    description: "Full hair coloring to refresh or change hair shade.",
-  },
-  {
-    name: "Highlights",
-    price: "799",
-    description: "Selected strands are colored to add dimension to the hair.",
-  },
-  {
-    name: "Balayage",
-    price: "1699",
-    description: "Hand-painted hair color technique for natural gradient effect.",
-  },
-  {
-    name: "Rebond",
-    price: "899",
-    description: "Chemical hair straightening for smooth and sleek hair.",
-  },
-  {
-    name: "Regular Keratin",
-    price: "499 UP",
-    description: "Keratin treatment to reduce frizz and add shine.",
-  },
-  {
-    name: "Brazilian Blow-out",
-    price: "899 UP",
-    description: "Professional smoothing treatment for shiny, frizz-free hair.",
-  },
-  // NAILS
-  {
-    name: "Manicure",
-    price: "119",
-    description: "Nail trimming, shaping, cuticle care, and polish.",
-  },
-  {
-    name: "Pedicure",
-    price: "139",
-    description: "Foot nail cleaning, shaping, and polish application.",
-  },
-  {
-    name: "Foot Spa",
-    price: "149",
-    description: "Relaxing foot soak with exfoliation and massage.",
-  },
-  {
-    name: "Foot Spa Gel-O",
-    price: "249",
-    description: "Foot spa treatment with gel polish application.",
-  },
-  {
-    name: "Gel Mani/Pedi",
-    price: "350",
-    description: "Long-lasting gel polish for hands or feet.",
-  },
-  {
-    name: "Gel Removal",
-    price: "129",
-    description: "Safe removal of gel polish without damaging nails.",
-  },
-  {
-    name: "Soft Gel",
-    price: "700 UP",
-    description: "Soft gel nail extensions for longer and durable nails.",
-  },
-  {
-    name: "Brow Threading",
-    price: "100",
-    description: "Precise eyebrow shaping using threading technique.",
-  },
-];
-
-const allPromos: Service[] = [
-  // HAIR PROMOS
-  {
-    name: "Rebond + Color",
-    price: "1499",
-    description: "Hair rebonding with full hair color treatment.",
-  },
-  {
-    name: "Rebond + Color + Brazilian",
-    price: "2499",
-    description: "Rebonding with hair color plus Brazilian smoothing treatment.",
-  },
-  {
-    name: "Rebond + Color + Cysteine",
-    price: "2799",
-    description: "Hair rebonding with color and cysteine smoothing treatment.",
-  },
-  {
-    name: "Rebond + Botox",
-    price: "1999",
-    description: "Rebonding combined with hair botox repair treatment.",
-  },
-  {
-    name: "Hair Color + Brazilian",
-    price: "1499",
-    description: "Hair coloring with Brazilian smoothing treatment.",
-  },
-  {
-    name: "Balayage + Cysteine",
-    price: "3099",
-    description: "Balayage coloring with cysteine smoothing treatment.",
-  },
-  // NAIL PROMOS
-  {
-    name: "Mani + Pedi",
-    price: "229",
-    description: "Combined manicure and pedicure nail care service.",
-  },
-  {
-    name: "Mani + Pedi + Footspa",
-    price: "349",
-    description: "Manicure, pedicure, and relaxing foot spa treatment.",
-  },
-  {
-    name: "Gel Mani + Pedi",
-    price: "450",
-    description: "Gel manicure and gel pedicure for long-lasting shine.",
-  },
-  {
-    name: "Gel Mani / Gel Pedi",
-    price: "649",
-    description: "Gel manicure or gel pedicure with premium polish finish.",
-  },
-  {
-    name: "Gel Mani + Gel Pedi + Footspa",
-    price: "799",
-    description: "Gel manicure, gel pedicure, and relaxing foot spa.",
-  },
-];
 
 export function ServicesSection() {
   const [activeTab, setActiveTab] = useState<"services" | "promos">("services");
   const [currentPage, setCurrentPage] = useState(1);
+  const [services, setServices] = useState<Service[]>([]);
+  const [promos, setPromos] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 12;
+  const supabase = createClient();
 
-  const activeItems = activeTab === "services" ? allServices : allPromos;
-  const totalPages = Math.ceil(activeItems.length / itemsPerPage);
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        const [servicesRes, promosRes] = await Promise.all([
+          supabase
+            .from("services")
+            .select("*")
+            .eq("status", "available")
+            .order("service_name"),
+          supabase
+            .from("promos")
+            .select("*")
+            .eq("status", "active")
+            .order("name")
+        ]);
+
+        if (servicesRes.error) {
+          console.error("Services fetch error:", servicesRes.error);
+          throw servicesRes.error;
+        }
+        if (promosRes.error) {
+          console.error("Promos fetch error:", promosRes.error);
+          throw promosRes.error;
+        }
+
+        console.log("Services raw data:", servicesRes.data);
+        console.log("Promos raw data:", promosRes.data);
+
+        setServices(servicesRes.data ? servicesRes.data.map(s => ({
+          id: s.service_id,
+          name: s.service_name,
+          price: s.price,
+          description: s.description,
+          duration: s.duration,
+          status: s.status
+        })) : []);
+
+        setPromos(promosRes.data ? promosRes.data.map(p => ({
+          id: p.promo_id,
+          name: (p as any).name || (p as any).promo_name || "",
+          price: p.price !== undefined && p.price !== null ? Number(p.price) : null,
+          description: p.description,
+          duration: p.duration,
+          status: p.status
+        })) : []);
+      } catch (err: any) {
+        console.error("Error loading services data:", err.message || err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [supabase]);
+
+  const activeItems = activeTab === "services" ? services : promos;
+  const totalItems = activeItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
 
   const paginatedItems = activeItems.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Split into columns for vertical flow (6 per side)
-  const leftColumn = paginatedItems.slice(0, 6);
-  const rightColumn = paginatedItems.slice(6, 12);
+  const handleRefresh = () => {
+    setLoading(true);
+    // This will trigger the effect again because of the supabase client or simple manual reload logic
+    window.location.reload();
+  };
 
   return (
     <section
@@ -234,81 +152,134 @@ export function ServicesSection() {
             {activeTab === "services" ? "SERVICES" : "PROMOS"}
           </h2>
 
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className={cn(
-                "text-2xl font-light transition-all p-2",
-                currentPage === 1
-                  ? "text-gray-200 cursor-not-allowed"
-                  : "text-[#1a1a1a] hover:opacity-50 cursor-pointer"
-              )}
-            >
-              &lt;
-            </button>
-            <span className="text-sm font-normal text-gray-500 font-sans tracking-widest select-none cursor-default">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className={cn(
-                "text-2xl font-light transition-all p-2",
-                currentPage === totalPages
-                  ? "text-gray-200 cursor-not-allowed"
-                  : "text-[#1a1a1a] hover:opacity-50 cursor-pointer"
-              )}
-            >
-              &gt;
-            </button>
-          </div>
+          {!loading && (
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className={cn(
+                  "text-2xl font-light transition-all p-2",
+                  currentPage === 1
+                    ? "text-gray-200 cursor-not-allowed"
+                    : "text-[#1a1a1a] hover:opacity-50 cursor-pointer"
+                )}
+              >
+                &lt;
+              </button>
+              <span className="text-sm font-normal text-gray-500 font-sans tracking-widest select-none cursor-default">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className={cn(
+                  "text-2xl font-light transition-all p-2",
+                  currentPage === totalPages
+                    ? "text-gray-200 cursor-not-allowed"
+                    : "text-[#1a1a1a] hover:opacity-50 cursor-pointer"
+                )}
+              >
+                &gt;
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-24 xl:gap-x-40 items-start min-h-[480px]">
-          {/* Left Column (Items 1-6) */}
-          <div className="flex flex-col gap-y-12">
-            {leftColumn.map((service, idx) => (
-              <div key={idx} className="flex flex-col">
-                <div className="flex justify-between items-end mb-1 select-none cursor-default">
-                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans">
-                    {service.name}
-                  </span>
-                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans tracking-tight">
-                    ₱{service.price}
-                  </span>
-                </div>
-                {service.description && (
-                  <p className="text-[0.9375rem] text-gray-500 font-medium leading-snug w-[85%] font-sans select-none cursor-default">
-                    {service.description}
-                  </p>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-[#494136]/20" />
+            <p className="text-sm font-medium text-gray-400 tracking-widest uppercase">Loading {activeTab}...</p>
+          </div>
+        ) : activeItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] gap-6 border-2 border-dashed border-black/5 rounded-[2rem] bg-white/50 backdrop-blur-sm shadow-inner">
+            <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center">
+              {activeTab === "services" ? (
+                <Sparkles className="w-10 h-10 text-muted-foreground/40" />
+              ) : (
+                <Tag className="w-10 h-10 text-muted-foreground/40" />
+              )}
+            </div>
+            <div className="text-center space-y-2">
+              <p className="text-lg font-bold text-gray-800 tracking-tight">No {activeTab} found</p>
+              <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                We couldn't find any {activeTab === "services" ? "available services" : "active promotions"} at the moment.
+              </p>
+            </div>
+            <button 
+              onClick={handleRefresh}
+              className="px-8 py-3 bg-[#494136] text-white rounded-full text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-black/10 cursor-pointer"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh Data
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+            {paginatedItems.map((item, idx) => (
+              <div 
+                key={item.id || idx} 
+                className="group flex flex-col bg-white rounded-2xl p-6 border border-black/5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full relative overflow-hidden"
+              >
+                {/* Duration Badge */}
+                {item.duration && (
+                  <div className="flex items-center gap-1.5 mb-4">
+                    <div className="p-1.5 rounded-lg bg-[#494136]/5">
+                      <Clock className="w-3 h-3 text-[#494136]" />
+                    </div>
+                    <span className="text-[10px] uppercase tracking-widest text-[#494136] font-extrabold font-sans">
+                      {item.duration}
+                    </span>
+                  </div>
                 )}
+
+                <div className="flex flex-col flex-1 mb-6">
+                  <h3 className="text-lg font-bold text-[#1a1a1a] font-sans leading-tight mb-2 group-hover:text-[#494136] transition-colors">
+                    {item.name}
+                  </h3>
+                  {item.description && (
+                    <p className="text-sm text-gray-500 font-medium leading-relaxed font-sans line-clamp-3">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-5 border-t border-black/5 flex items-center justify-between mt-auto">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">
+                      {activeTab === "services" ? "Starts at" : "Promo Deal"}
+                    </span>
+                    <span className="text-xl font-bold text-[#1a1a1a] font-sans tracking-tight">
+                      {item.price !== null && item.price !== undefined && item.price > 0 ? (
+                        `₱${item.price.toLocaleString()}`
+                      ) : (
+                        <span className="text-sm font-medium text-gray-400 italic">Check details</span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-[#f3efee] flex items-center justify-center group-hover:bg-[#494136] group-hover:text-white transition-all duration-300">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Decorative Element */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-[#494136]/5 to-transparent rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700 pointer-events-none" />
               </div>
             ))}
           </div>
-
-          {/* Right Column (Items 7-12) */}
-          <div className="flex flex-col gap-y-12">
-            {rightColumn.map((service, idx) => (
-              <div key={idx} className="flex flex-col">
-                <div className="flex justify-between items-end mb-1 select-none cursor-default">
-                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans">
-                    {service.name}
-                  </span>
-                  <span className="text-[1.0625rem] md:text-lg font-bold text-[#1a1a1a] font-sans tracking-tight">
-                    ₱{service.price}
-                  </span>
-                </div>
-                {service.description && (
-                  <p className="text-[0.9375rem] text-gray-500 font-medium leading-snug w-[85%] font-sans select-none cursor-default">
-                    {service.description}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );
 }
+

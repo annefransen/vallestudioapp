@@ -77,7 +77,7 @@ export function TeamSection() {
                   />
                 </div>
                 <div className="space-y-2 font-sans">
-                  <h3 className="text-xl font-extrabold text-[#1a1a1a] tracking-tight">
+                  <h3 className="text-xl font-bold text-[#1a1a1a] tracking-tight">
                     {member.name}
                   </h3>
                   <p className="text-[0.625rem] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed">

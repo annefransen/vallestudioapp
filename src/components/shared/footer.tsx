@@ -15,7 +15,7 @@ export function Footer() {
           
           {/* Brand Column (Heading & Subtitle & Hours) */}
           <div className="flex flex-col">
-            <h2 className="text-[clamp(3.5rem,8vw+2rem,6.25rem)] font-heading font-black uppercase tracking-tighter mb-4 flex flex-col leading-[0.85] text-[#beb9b7]">
+            <h2 className="text-[clamp(3.5rem,8vw+2rem,6.25rem)] font-heading font-bold uppercase tracking-tighter mb-4 flex flex-col leading-[0.85] text-[#beb9b7]">
               <span>Valle</span>
               <span className="opacity-70">Studio</span>
             </h2>

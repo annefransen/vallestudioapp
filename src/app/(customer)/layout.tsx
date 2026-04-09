@@ -1,5 +1,4 @@
-import { Navbar } from '@/components/shared/navbar'
-import { Footer } from '@/components/shared/footer'
+import { CustomerDashboardShell } from '@/components/dashboard/shell'
 
 export default function CustomerLayout({
   children,
@@ -7,10 +6,8 @@ export default function CustomerLayout({
   children: React.ReactNode
 }) {
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 pt-16">{children}</main>
-      <Footer />
-    </>
+    <CustomerDashboardShell>
+      {children}
+    </CustomerDashboardShell>
   )
 }

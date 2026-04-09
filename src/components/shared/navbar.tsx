@@ -158,7 +158,7 @@ export function Navbar() {
                   />
                 )}
                 <h2
-                  className={`relative z-10 font-heading font-black uppercase tracking-tighter transition-all duration-500 ${
+                  className={`relative z-10 font-heading font-bold uppercase tracking-tighter transition-all duration-500 ${
                     scrolled
                       ? "text-white text-[clamp(1.5rem,4vw,1rem)]"
                       : "text-[#beb9b7] text-[clamp(2.25rem,8vw,2rem)]"

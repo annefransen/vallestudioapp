@@ -15,10 +15,10 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -27,25 +27,34 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Refresh session — MUST call getUser() not getSession()
-  const { data: { user } } = await supabase.auth.getUser()
+  // IMPORTANT: Do not use getSession(). Use getUser() for security.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
 
-  // Protect /admin routes — redirect to login if not authenticated
+  // Redirect users away from auth pages if already logged in
+  if ((pathname.startsWith('/login') || pathname.startsWith('/register')) && user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  // Protect /admin routes
   if (pathname.startsWith('/admin')) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
-      url.searchParams.set('redirectTo', pathname)
+      url.searchParams.set('next', pathname)
       return NextResponse.redirect(url)
     }
 
-    // Check admin role
+    // Role check for admin
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('profile_id', user.id)
       .single()
 
     if (profile?.role !== 'admin') {
@@ -55,21 +64,14 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Protect /dashboard routes (customer-only)
-  if (pathname.startsWith('/dashboard')) {
+  // Protect /dashboard routes (customer/owner)
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/owner')) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
-      url.searchParams.set('redirectTo', pathname)
+      url.searchParams.set('next', pathname)
       return NextResponse.redirect(url)
     }
-  }
-
-  // Redirect logged-in users away from login
-  if (pathname === '/login' && user) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
   }
 
   return supabaseResponse
@@ -77,6 +79,13 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * Feel free to modify this pattern to include more paths.
+     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

@@ -1,9 +1,11 @@
-// VALLE STUDIO LANDING PAGE
+// LANDING PAGE
 "use client";
 
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { Navbar } from "@/components/shared/navbar";
+import { Footer } from "@/components/shared/footer";
 import { ServicesSection } from "@/components/home/services-section";
 import { GallerySection } from "@/components/home/gallery-section";
 import { FaqSection } from "@/components/home/faq-section";
@@ -12,6 +14,7 @@ import { CtaSection } from "@/components/home/cta-section";
 export default function HomePage() {
   return (
     <div className="overflow-hidden">
+      <Navbar />
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex items-center justify-center">
         {/* Background Image */}
@@ -85,6 +88,7 @@ export default function HomePage() {
         <FaqSection />
         <CtaSection />
       </main>
+      <Footer />
     </div>
   );
 }

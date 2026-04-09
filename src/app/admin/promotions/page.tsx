@@ -64,6 +64,7 @@ const CATEGORIES: { value: PromoCategory; label: string; emoji: string }[] = [
 export default function PromosPage() {
   const [promos, setpromos] = useState<AdminPromo[]>([])
   const [loading, setLoading] = useState(true)
+  const [schemaError, setSchemaError] = useState(false)
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<AdminPromo | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -75,15 +76,19 @@ export default function PromosPage() {
   })
 
   const loadpromos = async () => {
-    const { data } = await supabase.from('promos').select('*').order('category').order('price')
-    if (data) {
+    const { data } = await supabase.from('promos').select('*').order('category')
+    if (data && data.length > 0) {
+      // Check if price column exists in the first row
+      if (!('price' in data[0])) {
+        setSchemaError(true)
+      }
       const mapped = data.map((s: any) => ({
         id: s.promo_id,
-        name: s.promo_name,
+        name: s.name || s.promo_name || "",
         description: s.description,
         category: s.category as PromoCategory,
         duration_min: parseInterval(s.duration),
-        price: Number(s.price),
+        price: s.price ? Number(s.price) : 0,
         is_active: s.status === 'available'
       }))
       setpromos(mapped)
@@ -116,7 +121,7 @@ export default function PromosPage() {
     setSubmitting(true)
     
     const dbPayload = {
-      promo_name: data.name,
+      name: data.name,
       description: data.description,
       category: data.category,
       price: data.price,
@@ -171,6 +176,24 @@ export default function PromosPage() {
           <h1 className="text-[clamp(1.25rem,2vw+0.5rem,1.5rem)] font-heading font-bold">Promos</h1>
           <p className="text-muted-foreground text-sm mt-1">Manage salon promos and pricing</p>
         </div>
+        {schemaError && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-xl animate-in fade-in slide-in-from-top-2 duration-500">
+            <div className="flex gap-3">
+              <div className="p-2 rounded-full bg-amber-100 shrink-0">
+                <Plus className="w-4 h-4 text-amber-700 rotate-45" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-amber-900">Database Update Needed</p>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Your promos table is missing the <strong>price</strong> column. To fix this and see prices on the website, please run this SQL in your Supabase dashboard:
+                </p>
+                <code className="block bg-amber-900/10 p-2 rounded text-[10px] font-mono text-amber-950 mt-2 select-all">
+                  ALTER TABLE public.promos ADD COLUMN price NUMERIC DEFAULT 0;
+                </code>
+              </div>
+            </div>
+          </div>
+        )}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger
             render={
