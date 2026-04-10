@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })
@@ -41,8 +41,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Protect /admin routes
-  if (pathname.startsWith('/admin')) {
+  // Protect /admin routes but allow unauthenticated access to /admin-login
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin-login')) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
@@ -64,8 +64,8 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Protect /dashboard routes (customer/owner)
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/owner')) {
+  // Protect /dashboard and /owner routes but allow unauthenticated access to /owner-login
+  if (pathname.startsWith('/dashboard') || (pathname.startsWith('/owner') && !pathname.startsWith('/owner-login'))) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
