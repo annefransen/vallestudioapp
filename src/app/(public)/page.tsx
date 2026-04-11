@@ -4,12 +4,12 @@
 import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Navbar } from "@/components/shared/navbar";
-import { Footer } from "@/components/shared/footer";
-import { ServicesSection } from "@/components/home/services-section";
-import { GallerySection } from "@/components/home/gallery-section";
-import { FaqSection } from "@/components/home/faq-section";
-import { CtaSection } from "@/components/home/cta-section";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { ServicesSection } from "@/components/home/ServicesSection";
+import { GallerySection } from "@/components/home/GallerySection";
+import { FaqSection } from "@/components/home/FaqSection";
+import { CtaSection } from "@/components/home/CtaSection";
 
 export default function HomePage() {
   return (

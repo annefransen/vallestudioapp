@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 import { Plus_Jakarta_Sans } from "next/font/google"
-import { Toaster } from "@/components/ui/sonner"
+import { Toaster } from "@/components/ui/Sonner"
 import "./globals.css"
-import { BoneyardProvider } from "@/components/providers/boneyard-provider"
+import { BoneyardProvider } from "@/components/providers/BoneyardProvider"
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",

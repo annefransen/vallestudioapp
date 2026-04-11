@@ -1,4 +1,4 @@
-import { CustomerDashboardShell } from '@/components/dashboard/shell'
+import { DashboardShell } from "@/components/dashboard/DashboardShell"
 
 export default function CustomerLayout({
   children,
@@ -6,8 +6,8 @@ export default function CustomerLayout({
   children: React.ReactNode
 }) {
   return (
-    <CustomerDashboardShell>
+    <DashboardShell>
       {children}
-    </CustomerDashboardShell>
+    </DashboardShell>
   )
 }

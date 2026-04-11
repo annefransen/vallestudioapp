@@ -42,7 +42,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Protect /admin routes but allow unauthenticated access to /admin-login
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin-login')) {
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/login/admin')) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'
@@ -65,7 +65,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Protect /dashboard and /owner routes but allow unauthenticated access to /owner-login
-  if (pathname.startsWith('/dashboard') || (pathname.startsWith('/owner') && !pathname.startsWith('/owner-login'))) {
+  if (pathname.startsWith('/dashboard') || (pathname.startsWith('/owner') && !pathname.startsWith('/login/owner'))) {
     if (!user) {
       const url = request.nextUrl.clone()
       url.pathname = '/login'

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import { ImageGallery } from "@/components/ui/gallery";
+import { ImageGallery } from "@/components/ui/Gallery";
 
 const galleryImages = [
   "/gallery/hair-1.png",

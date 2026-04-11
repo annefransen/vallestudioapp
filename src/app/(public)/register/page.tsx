@@ -6,8 +6,8 @@ import * as React from "react";
 import Link from "next/link";
 import { ArrowLeft, CalendarIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Particles } from "@/components/ui/particles";
+import { Button } from "@/components/ui/Button";
+import { Particles } from "@/components/ui/Particles";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
