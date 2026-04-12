@@ -63,10 +63,13 @@ async function getDashboardStats() {
     const d = new Date(r.start_time)
     const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
     
-    const guestName = r.profiles 
-      ? `${r.profiles.first_name} ${r.profiles.last_name}`.trim() 
-      : r.guests 
-        ? `${r.guests.first_name} ${r.guests.last_name}`.trim()
+    const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+    const g = Array.isArray(r.guests) ? r.guests[0] : r.guests
+
+    const guestName = p 
+      ? `${p.first_name} ${p.last_name}`.trim() 
+      : g 
+        ? `${g.first_name} ${g.last_name}`.trim()
         : 'Guest'
 
     const service = r.booking_items?.[0]?.services

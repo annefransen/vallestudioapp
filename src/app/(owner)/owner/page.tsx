@@ -40,7 +40,10 @@ async function getOwnerStats() {
     recentBookings: (recentResData.data ?? []).map((r: any) => ({
       id: r.reservation_id,
       status: r.status,
-      guest_name: `${r.profiles?.first_name} ${r.profiles?.last_name}`,
+      guest_name: (() => {
+        const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+        return p ? `${p.first_name} ${p.last_name}`.trim() : 'Guest'
+      })(),
       is_walkin: false,
       booking_date: r.reservation_date,
       booking_time: r.start_time,
