@@ -2,6 +2,7 @@
 // Valle Studio Salon — Shared TypeScript Types
 // ============================================================
 
+<<<<<<< HEAD
 export type UserRole = "customer" | "admin";
 export type ServiceCategory = "hair" | "nails" | "brows";
 export type BookingStatus =
@@ -13,6 +14,14 @@ export type BookingStatus =
 export type PaymentMethod = "cash" | "gcash_instore" | "gcash_online";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type DiscountType = "percent" | "fixed";
+=======
+export type UserRole = 'customer' | 'admin'
+export type ServiceCategory = 'Hair' | 'Nails' | 'Brow'
+export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
+export type PaymentMethod = 'cash' | 'gcash_instore' | 'gcash_online'
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
+export type DiscountType = 'percent' | 'fixed'
+>>>>>>> 7f53ef4040fb59b976320506d32276c2f2e746bb
 
 export interface Profile {
   id: string;

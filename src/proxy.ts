@@ -42,27 +42,27 @@ export async function proxy(request: NextRequest) {
   }
 
   // Protect /admin routes but allow unauthenticated access to /admin-login
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/login/admin')) {
-    if (!user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      url.searchParams.set('next', pathname)
-      return NextResponse.redirect(url)
-    }
+  // if (pathname.startsWith('/admin') && !pathname.startsWith('/login/admin')) {
+  //   if (!user) {
+  //     const url = request.nextUrl.clone()
+  //     url.pathname = '/login'
+  //     url.searchParams.set('next', pathname)
+  //     return NextResponse.redirect(url)
+  //   }
 
-    // Role check for admin
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('profile_id', user.id)
-      .single()
+  //   // Role check for admin
+  //   const { data: profile } = await supabase
+  //     .from('profiles')
+  //     .select('role')
+  //     .eq('profile_id', user.id)
+  //     .single()
 
-    if (profile?.role !== 'admin') {
-      const url = request.nextUrl.clone()
-      url.pathname = '/'
-      return NextResponse.redirect(url)
-    }
-  }
+  //   if (profile?.role !== 'admin') {
+  //     const url = request.nextUrl.clone()
+  //     url.pathname = '/'
+  //     return NextResponse.redirect(url)
+  //   }
+  // }
 
   // Protect /dashboard and /owner routes but allow unauthenticated access to /owner-login
   if (pathname.startsWith('/dashboard') || (pathname.startsWith('/owner') && !pathname.startsWith('/login/owner'))) {

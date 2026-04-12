@@ -1,261 +1,253 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, Loader2, Users } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Label } from '@/components/ui/Label'
-import { Badge } from '@/components/ui/Badge'
-import { Card } from '@/components/ui/Card'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
-} from '@/components/ui/Dialog'
+import { useState, useEffect } from 'react'
+import { format, addDays, subDays } from 'date-fns'
+import { ChevronLeft, ChevronRight, Loader2, Users, Clock, Briefcase } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
-export type StaffMember = {
+interface Stylist {
   id: string
-  first_name: string
-  last_name: string
-  gmail: string
-  phone: string | null
+  name: string
   role: string
-  is_active: boolean
+  active: boolean
 }
 
-const schema = z.object({
-  first_name: z.string().min(2, 'Required'),
-  last_name: z.string().min(2, 'Required'),
-  gmail: z.string().email('Valid email required'),
-  password: z.string().min(6, 'Min 6 characters').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  role: z.string().min(2, 'Required'),
-  is_active: z.boolean().default(true),
-})
-type FormData = z.infer<typeof schema>
+interface Appointment {
+  stylistId: string
+  time: string
+  durationSlots: number
+  client: string
+  service: string
+  color: string
+}
 
-export default function StylistsPage() {
-  const [staff, setStaff] = useState<StaffMember[]>([])
+const TIME_SLOTS = [
+  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM',
+  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM',
+  '06:00 PM', '06:30 PM', '07:00 PM',
+]
+
+const APPT_COLORS = [
+  'bg-rose-100 border-rose-200 text-rose-800',
+  'bg-blue-100 border-blue-200 text-blue-800',
+  'bg-amber-100 border-amber-200 text-amber-800',
+  'bg-violet-100 border-violet-200 text-violet-800',
+  'bg-emerald-100 border-emerald-200 text-emerald-800',
+]
+
+export default function StylistSchedulePage() {
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [stylists, setStylists] = useState<Stylist[]>([])
+  const [schedules, setSchedules] = useState<Appointment[]>([])
+  const [selectedStylistId, setSelectedStylistId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState<StaffMember | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const supabase = createClient()
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema) as any,
-    defaultValues: { is_active: true, role: 'Hair Stylist' },
-  })
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true)
+      const supabase = createClient()
+      const { data: staffData } = await supabase.from('staff').select('*').order('first_name')
+      const mappedStylists = (staffData || []).map((s: Record<string, unknown>) => ({
+        id: s.staff_id as string,
+        name: `${s.first_name} ${s.last_name}`,
+        role: s.role as string,
+        active: s.status === 'active',
+      }))
+      setStylists(mappedStylists)
+      if (mappedStylists.length > 0 && !selectedStylistId) {
+        setSelectedStylistId(mappedStylists[0].id)
+      }
 
-  const loadStaff = async () => {
-    const { data } = await supabase.from('staff').select('*').order('first_name')
-    if (data) {
-      setStaff(data.map((s: any) => ({
-        id: s.staff_id,
-        first_name: s.first_name,
-        last_name: s.last_name,
-        gmail: s.gmail,
-        phone: s.phone,
-        role: s.role,
-        is_active: s.status === 'active'
-      })))
+      const targetDate = format(currentDate, 'yyyy-MM-dd')
+      const [resData, walkData] = await Promise.all([
+        supabase.from('reservation').select(`
+          reservation_id, reservation_date, start_time, status, staff_id, stylist_id,
+          profiles (first_name, last_name), guests (first_name, last_name),
+          booking_items (*, services(service_name, duration))
+        `).eq('reservation_date', targetDate),
+        supabase.from('walkins').select(`
+          walkin_id, reservation_date, start_time, status, staff_id, stylist_id, full_name,
+          booking_items (*, services(service_name, duration))
+        `).eq('reservation_date', targetDate),
+      ])
+
+      const mappedSchedules: Appointment[] = []
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const processBooking = (r: any) => {
+        const sId = r.staff_id || r.stylist_id
+        if (!sId || r.status === 'cancelled') return
+        const d = r.start_time ? new Date(r.start_time) : new Date()
+        const timeStr = format(d, 'hh:mm a').toUpperCase()
+        let clientName = r.full_name?.trim() || 'Walk-in'
+        if (r.profiles || r.guests) {
+          clientName = r.profiles
+            ? `${r.profiles.first_name} ${r.profiles.last_name}`.trim()
+            : r.guests ? `${r.guests.first_name} ${r.guests.last_name}`.trim() : 'Client'
+        }
+        const serviceGroup = r.booking_items?.[0]?.services
+        const serviceName = serviceGroup?.service_name || 'Service'
+        const durationStr = serviceGroup?.duration || '01:00:00'
+        let durMin = 60
+        if (typeof durationStr === 'string') {
+          const parts = durationStr.split(':')
+          durMin = (parseInt(parts[0]) * 60) + parseInt(parts[1] || '0')
+        }
+        mappedSchedules.push({
+          stylistId: sId,
+          time: timeStr,
+          durationSlots: Math.max(1, Math.ceil(durMin / 30)),
+          client: clientName,
+          service: serviceName,
+          color: APPT_COLORS[mappedSchedules.length % APPT_COLORS.length],
+        })
+      }
+      ;(resData.data || []).forEach(processBooking)
+      ;(walkData.data || []).forEach(processBooking)
+      setSchedules(mappedSchedules)
+      setLoading(false)
     }
-    setLoading(false)
-  }
+    void loadData()
+  }, [currentDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { loadStaff() }, [])
-
-  const openAdd = () => {
-    setEditing(null)
-    reset({ first_name: '', last_name: '', gmail: '', password: '', phone: '', role: 'Hair Stylist', is_active: true })
-    setOpen(true)
-  }
-
-  const openEdit = (member: StaffMember) => {
-    setEditing(member)
-    reset({
-      first_name: member.first_name,
-      last_name: member.last_name,
-      gmail: member.gmail,
-      phone: member.phone || '',
-      role: member.role,
-      password: '', // blank meaning no change
-      is_active: member.is_active,
-    })
-    setOpen(true)
-  }
-
-  const onSubmit = async (data: FormData) => {
-    setSubmitting(true)
-    const payload: any = {
-      first_name: data.first_name,
-      last_name: data.last_name,
-      gmail: data.gmail,
-      phone: data.phone || null,
-      role: data.role,
-      status: data.is_active ? 'active' : 'inactive',
-    }
-    
-    // Auto-generate password if new and not provided
-    if (!editing && !data.password) {
-      payload.password = Math.random().toString(36).slice(-8)
-    } else if (data.password) {
-      payload.password = data.password
-    }
-
-    if (editing) {
-      const { error } = await supabase.from('staff').update(payload).eq('staff_id', editing.id)
-      if (error) { toast.error('Failed to update staff member'); setSubmitting(false); return }
-      toast.success('Staff member updated')
-    } else {
-      const { error } = await supabase.from('staff').insert(payload)
-      if (error) { toast.error(error.message.includes('unique') ? 'Email already used' : 'Failed to add staff'); setSubmitting(false); return }
-      toast.success('Staff member added')
-    }
-    setOpen(false)
-    setSubmitting(false)
-    loadStaff()
-  }
-
-  const deleteStaff = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this staff member?')) return
-    const { error } = await supabase.from('staff').delete().eq('staff_id', id)
-    if (error) {
-      toast.error('Cannot remove staff member tied to records')
-      return
-    }
-    toast.success('Staff member removed')
-    setStaff(prev => prev.filter(s => s.id !== id))
-  }
+  const selectedStylist = stylists.find(s => s.id === selectedStylistId)
+  const selectedAppts = schedules.filter(s => s.stylistId === selectedStylistId)
+  const bookedSlots = new Set(selectedAppts.map(a => a.time))
+  const availableCount = TIME_SLOTS.filter(t => !bookedSlots.has(t)).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-[1400px]">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[clamp(1.25rem,2vw+0.5rem,1.5rem)] font-heading font-bold">Staff Directory</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage salon staff members and credentials</p>
+          <h1 className="text-xl font-bold text-zinc-900 tracking-tight">Stylist Schedule</h1>
+          <p className="text-sm text-zinc-400 mt-0.5">Manage staff appointments and availability</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger
-            render={
-              <Button className="gradient-brand text-white border-0" onClick={openAdd} id="add-stylist-btn">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Staff
-              </Button>
-            }
-          />
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editing ? 'Edit Staff Member' : 'Add Staff Member'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4 mt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="s-first">First Name *</Label>
-                  <Input id="s-first" placeholder="Jane" {...register('first_name')} />
-                  {errors.first_name && <p className="text-xs text-destructive">{errors.first_name.message}</p>}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="s-last">Last Name *</Label>
-                  <Input id="s-last" placeholder="Doe" {...register('last_name')} />
-                  {errors.last_name && <p className="text-xs text-destructive">{errors.last_name.message}</p>}
-                </div>
-              </div>
-              
-              <div className="space-y-1.5">
-                <Label htmlFor="s-email">Email (Login) *</Label>
-                <Input id="s-email" type="email" placeholder="jane@vallestudio.com" {...register('gmail')} disabled={!!editing} className={editing ? "bg-muted" : ""}  />
-                {errors.gmail && <p className="text-xs text-destructive">{errors.gmail.message}</p>}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="s-pass">{editing ? 'New Password (leave blank to keep)' : 'Password *'}</Label>
-                <Input id="s-pass" type="password" placeholder={editing ? '••••••••' : 'create password'} {...register('password')} />
-                {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="s-role">Role/Specialty *</Label>
-                  <Input id="s-role" placeholder="ex: Senior Hair Stylist" {...register('role')} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="s-phone">Phone</Label>
-                  <Input id="s-phone" placeholder="09XX" {...register('phone')} />
-                </div>
-              </div>
-              
-              <label className="flex items-center gap-2 cursor-pointer pt-2">
-                <input type="checkbox" {...register('is_active')} defaultChecked className="rounded border-border" />
-                <span className="text-sm font-medium">Active Account</span>
-              </label>
-              
-              <Button type="submit" className="w-full gradient-brand text-white border-0 mt-4" disabled={submitting}>
-                {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                {editing ? 'Update Record' : 'Save Staff Member'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {/* Date Nav */}
+        <div className="flex items-center gap-1 bg-white border border-zinc-200 rounded-lg p-1">
+          <button onClick={() => setCurrentDate(subDays(currentDate, 1))} className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors">
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 rounded-md transition-colors">
+            Today
+          </button>
+          <span className="px-3 text-sm font-semibold text-zinc-900 min-w-[110px] text-center">
+            {format(currentDate, 'MMM d, yyyy')}
+          </span>
+          <button onClick={() => setCurrentDate(addDays(currentDate, 1))} className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
-      ) : staff.length === 0 ? (
-        <Card className="border-border/50 p-12 text-center">
-          <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="font-semibold">No staff found</p>
-          <p className="text-sm text-muted-foreground mt-1">Add your team members here.</p>
-        </Card>
+        <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-zinc-400" /></div>
       ) : (
-        <Card className="border-border/50 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/40">
-                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Staff Member</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase hidden sm:table-cell">Contact</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Role</th>
-                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Status</th>
-                <th className="text-right px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {staff.map(member => (
-                <tr key={member.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="px-5 py-4">
-                    <p className="font-medium">{member.first_name} {member.last_name}</p>
-                    <p className="text-xs text-muted-foreground">{member.gmail}</p>
-                  </td>
-                  <td className="px-5 py-4 hidden sm:table-cell text-muted-foreground">{member.phone || '—'}</td>
-                  <td className="px-5 py-4 text-primary font-medium">{member.role}</td>
-                  <td className="px-5 py-4">
-                    {member.is_active ? (
-                      <Badge variant="secondary" className="status-confirmed text-xs">Active</Badge>
-                    ) : (
-                      <Badge variant="secondary" className="status-cancelled text-xs">Inactive</Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[600px]">
+          {/* Left: Stylist List */}
+          <div className="bg-white rounded-xl border border-zinc-100 flex flex-col">
+            <div className="px-5 py-4 border-b border-zinc-100">
+              <h2 className="text-sm font-semibold text-zinc-900">Stylists</h2>
+              <p className="text-[11px] text-zinc-400 mt-0.5">{stylists.filter(s => s.active).length} active today</p>
+            </div>
+            <div className="flex-1 overflow-y-auto divide-y divide-zinc-50">
+              {stylists.length === 0 ? (
+                <div className="flex items-center justify-center h-32 text-sm text-zinc-400">No staff found</div>
+              ) : stylists.map(stylist => {
+                const apptCount = schedules.filter(s => s.stylistId === stylist.id).length
+                const avail = TIME_SLOTS.length - apptCount
+                const isSelected = selectedStylistId === stylist.id
+                return (
+                  <button
+                    key={stylist.id}
+                    onClick={() => setSelectedStylistId(stylist.id)}
+                    className={cn(
+                      'w-full px-5 py-4 flex items-center gap-3 text-left transition-colors',
+                      isSelected ? 'bg-zinc-50' : 'hover:bg-zinc-50/50'
                     )}
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(member)}>
-                        <Pencil className="w-4 h-4 text-muted-foreground" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:text-destructive" onClick={() => deleteStaff(member.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                  >
+                    <div className={cn('w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border-2 transition-colors',
+                      isSelected ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-zinc-100 text-zinc-600 border-transparent'
+                    )}>
+                      {stylist.name[0]}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="px-5 py-3 border-t border-border text-xs text-muted-foreground">
-            {staff.length} team members
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-zinc-900 truncate">{stylist.name}</p>
+                      <p className="text-[11px] text-zinc-400 capitalize">{stylist.role}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="flex items-center gap-1 text-[11px]">
+                        <Users className="w-3 h-3 text-zinc-400" />
+                        <span className="text-zinc-900 font-semibold">{apptCount}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] mt-0.5">
+                        <Clock className="w-3 h-3 text-emerald-500" />
+                        <span className="text-emerald-600 font-medium">{avail} free</span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </Card>
+
+          {/* Right: Time Slot Grid */}
+          <div className="lg:col-span-2 bg-white rounded-xl border border-zinc-100 flex flex-col">
+            <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-zinc-900">
+                  {selectedStylist ? selectedStylist.name : 'Select a stylist'}
+                </h2>
+                {selectedStylist && (
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    {selectedAppts.length} booked · {availableCount} available slots
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-zinc-100 border border-zinc-200 inline-block" /> Available</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-zinc-900 inline-block" /> Booked</span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-5">
+              {!selectedStylistId ? (
+                <div className="flex flex-col items-center justify-center h-full text-zinc-400 gap-2">
+                  <Briefcase className="w-8 h-8" />
+                  <p className="text-sm">Select a stylist to view their schedule</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {TIME_SLOTS.map(slot => {
+                    const appt = selectedAppts.find(a => a.time === slot)
+                    const isBooked = !!appt
+                    return (
+                      <div
+                        key={slot}
+                        className={cn(
+                          'rounded-lg border p-3 text-left transition-all',
+                          isBooked
+                            ? cn('border', appt.color)
+                            : 'border-zinc-200 bg-white hover:border-zinc-400 hover:bg-zinc-50 cursor-pointer'
+                        )}
+                      >
+                        <p className={cn('text-[11px] font-bold', isBooked ? '' : 'text-zinc-500')}>{slot}</p>
+                        {isBooked ? (
+                          <div className="mt-1">
+                            <p className="text-[12px] font-semibold truncate">{appt.client}</p>
+                            <p className="text-[10px] truncate opacity-75">{appt.service}</p>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-zinc-400 mt-0.5">Available</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

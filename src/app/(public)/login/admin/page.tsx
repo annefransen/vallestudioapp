@@ -39,7 +39,8 @@ export default function AdminLoginPage() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-    }, 1500);
+      router.push("/admin");
+    }, 1000);
   };
 
   return (
