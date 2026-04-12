@@ -65,8 +65,10 @@ export default function PaymentsPage() {
           let guestName = '—', guestPhone = '—', date = '', time = '', serviceObj = null
           if (p.reservation) {
             const res = p.reservation
-            guestName = res.profiles ? `${res.profiles.first_name || ''} ${res.profiles.last_name || ''}`.trim() : res.guests ? `${res.guests.first_name || ''} ${res.guests.last_name || ''}`.trim() : 'Guest'
-            guestPhone = res.guests?.contact_number || res.profiles?.phone || '—'
+            const prof = Array.isArray(res.profiles) ? res.profiles[0] : res.profiles
+            const gst = Array.isArray(res.guests) ? res.guests[0] : res.guests
+            guestName = prof ? `${prof.first_name || ''} ${prof.last_name || ''}`.trim() : gst ? `${gst.first_name || ''} ${gst.last_name || ''}`.trim() : 'Guest'
+            guestPhone = gst?.contact_number || prof?.phone || '—'
             date = res.reservation_date
             if (res.start_time) {
               const d = new Date(res.start_time)

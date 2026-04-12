@@ -54,23 +54,23 @@ export default function CustomersPage() {
 
       const customerMap = new Map<string, Customer>()
 
-      const processRecord = (r: Record<string, unknown>, type: string) => {
-        const profile = r.profiles as Record<string, any> | undefined
-        const guest = r.guests
+      const processRecord = (r: Record<string, any>, type: string) => {
+        const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+        const g = Array.isArray(r.guests) ? r.guests[0] : r.guests
         
         // Walkin processing relies on direct columns
         let cid, name, phone
         if (type === 'walk-in') {
           cid = `w_${r.walkin_id}`
-          name = r.full_name?.trim() || 'Walk-in Customer'
-          phone = r.contact_number || 'N/A'
+          name = typeof r.full_name === 'string' && r.full_name.trim() ? r.full_name.trim() : 'Walk-in Customer'
+          phone = typeof r.contact_number === 'string' ? r.contact_number : 'N/A'
         } else {
           // Skip if no associated user account representation
-          if (!profile && !guest) return
+          if (!p && !g) return
 
-          cid = profile ? `p_${r.profile_id}` : `g_${r.guest_id}`
-          name = profile ? `${profile.first_name} ${profile.last_name}` : `${guest.first_name} ${guest.last_name}`
-          phone = profile?.phone || guest?.contact_number || 'N/A'
+          cid = p ? `p_${r.profile_id}` : `g_${r.guest_id}`
+          name = p ? `${p.first_name} ${p.last_name}` : `${g.first_name} ${g.last_name}`
+          phone = p?.phone || g?.contact_number || 'N/A'
         }
         
         const serviceNode = r.booking_items?.[0]?.services

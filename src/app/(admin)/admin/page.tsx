@@ -117,10 +117,7 @@ async function getDashboardStats() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10)
 
-  // Compute graph aggregates for previous 7 rolling days
-  const historicalPayments = recentResData[6]?.data ?? [] // Actually, it's index 7 in the Promise.all array if we destructured properly
-  // Wait, let's fix the destructuring gracefully in the payload block by just extracting the 7th/8th index.
-  // We'll compute the graph natively below.
+  // Graph aggregates are natively computed in the main page wrapper below
 
   return {
     todayBookings: todayBookingsCount,

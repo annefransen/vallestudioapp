@@ -14,6 +14,7 @@ interface Stats {
   weeklyRevenue: number
   recentBookings: Booking[]
   activeStylists?: number
+  chartData?: { name: string, revenue: number }[]
 }
 
 function formatTime(time: string) {

@@ -23,7 +23,13 @@ export default async function PerformancePage() {
   const totalAppointments = reservations.length + walkins.length
   
   // Quick estimation logic for distinct profiles created this month vs before
-  const newClients = new Set(reservations.map(r => r.profiles?.id).filter(id => !!id)).size
+  const newClients = new Set(
+    reservations.flatMap(r => {
+      if (!r.profiles) return []
+      if (Array.isArray(r.profiles)) return r.profiles.map(p => p.id)
+      return [(r.profiles as any).id]
+    }).filter(Boolean)
+  ).size
   const avgServiceValue = totalAppointments > 0 ? (totalRevenue / totalAppointments) : 0
 
   // Chart aggregation for last 7 days dynamically

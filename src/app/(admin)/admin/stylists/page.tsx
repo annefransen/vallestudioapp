@@ -81,10 +81,13 @@ export default function StylistSchedulePage() {
         const d = r.start_time ? new Date(r.start_time) : new Date()
         const timeStr = format(d, 'hh:mm a').toUpperCase()
         let clientName = r.full_name?.trim() || 'Walk-in'
-        if (r.profiles || r.guests) {
-          clientName = r.profiles
-            ? `${r.profiles.first_name} ${r.profiles.last_name}`.trim()
-            : r.guests ? `${r.guests.first_name} ${r.guests.last_name}`.trim() : 'Client'
+        const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+        const g = Array.isArray(r.guests) ? r.guests[0] : r.guests
+        
+        if (p || g) {
+          clientName = p
+            ? `${p.first_name} ${p.last_name}`.trim()
+            : g ? `${g.first_name} ${g.last_name}`.trim() : 'Client'
         }
         const serviceGroup = r.booking_items?.[0]?.services
         const serviceName = serviceGroup?.service_name || 'Service'

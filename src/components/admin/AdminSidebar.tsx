@@ -111,12 +111,16 @@ function NavContent({ collapsed, pathname, setMobileOpen }: NavContentProps) {
 }
 
 interface AdminSidebarProps {
-  collapsed: boolean
-  mobileOpen: boolean
-  setMobileOpen: (open: boolean) => void
+  collapsed?: boolean
+  mobileOpen?: boolean
+  setMobileOpen?: (open: boolean) => void
 }
 
-export function AdminSidebar({ collapsed, mobileOpen, setMobileOpen }: AdminSidebarProps) {
+export function AdminSidebar({ 
+  collapsed = false, 
+  mobileOpen = false, 
+  setMobileOpen = () => {} 
+}: AdminSidebarProps) {
   const pathname = usePathname()
 
   return (

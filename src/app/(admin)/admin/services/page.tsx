@@ -31,7 +31,7 @@ const schema = z.object({
   category: z.enum(['Hair', 'Nails', 'Brow']),
   duration_min: z.coerce.number().min(15).max(480),
   price: z.coerce.number().min(1),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 })
 type FormData = z.infer<typeof schema>
 

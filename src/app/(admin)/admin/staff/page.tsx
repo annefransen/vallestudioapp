@@ -29,7 +29,7 @@ const schema = z.object({
   password: z.string().min(6, 'Min 6 characters').optional().or(z.literal('')),
   phone: z.string().optional(),
   role: z.string().min(2, 'Required'),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean(),
 })
 type FormData = z.infer<typeof schema>
 
