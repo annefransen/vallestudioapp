@@ -6,13 +6,33 @@ import { ArrowRight, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { useBooking, type ServiceItem } from "@/contexts/BookingContext";
+import {
+  useCustomerBooking,
+  type ServiceItem,
+} from "@/contexts/CustomerBookingContext";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-import { ServiceDetailModal } from "@/components/home/ServiceDetailModal";
+import { BookAppointmentSkeleton } from "@/components/ui/Skeletons";
+import { BookingProgressBar } from "@/components/ui/BookingProgressBar";
 
-export default function ServiceSelectionPage() {
+const CATEGORIES = [
+  { id: "all", label: "All Services" },
+  { id: "hair", label: "Hair" },
+  { id: "nails", label: "Nails" },
+  { id: "brows", label: "Brows" },
+] as const;
+type CategoryId = (typeof CATEGORIES)[number]["id"];
+
+function parseDuration(d: string | null): number {
+  if (!d) return 30;
+  const parts = d.split(":");
+  if (parts.length >= 2)
+    return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
+  return parseInt(d) || 30;
+}
+
+export default function CustomerBookStep1Services() {
   const router = useRouter();
   const {
     selectedServices,
@@ -20,15 +40,12 @@ export default function ServiceSelectionPage() {
     removeService,
     getTotalPrice,
     getTotalDuration,
-  } = useBooking();
-  const [selectedCategory, setSelectedCategory] = useState<
-    "all" | "hair" | "nails" | "brows"
-  >("all");
+    setIsPageLoading,
+  } = useCustomerBooking();
+
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>("all");
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [detailService, setDetailService] = useState<ServiceItem | null>(null);
-
   const supabase = createClient();
 
   useEffect(() => {
@@ -50,38 +67,29 @@ export default function ServiceSelectionPage() {
         if (servicesRes.error) throw servicesRes.error;
         if (promosRes.error) throw promosRes.error;
 
-        const parseDuration = (duration: string | null): number => {
-          if (!duration) return 30;
-          const parts = duration.split(":");
-          if (parts.length >= 2) {
-            const hours = parseInt(parts[0], 10) || 0;
-            const minutes = parseInt(parts[1], 10) || 0;
-            return hours * 60 + minutes;
-          }
-          return parseInt(duration, 10) || 30;
-        };
-
-        const mappedServices: ServiceItem[] = (servicesRes.data || []).map(
-          (s) => ({
+        const mappedServices: ServiceItem[] = (servicesRes.data ?? []).map(
+          (s: any) => ({
             id: s.service_id,
             name: s.service_name,
-            price: s.price || 0,
+            price: s.price ?? 0,
             duration: parseDuration(s.duration),
-            description: s.description || "",
-            type: "service",
-            category: (s.category as any) || "Hair",
+            description: s.description ?? "",
+            type: "service" as const,
+            category: s.category ?? "Hair",
           }),
         );
 
-        const mappedPromos: ServiceItem[] = (promosRes.data || []).map((p) => ({
-          id: p.promo_id,
-          name: p.name || p.promo_name || "Promotion",
-          price: p.price || 0,
-          duration: parseDuration(p.duration),
-          description: p.description || "",
-          type: "promo",
-          category: (p.category as any) || "Hair",
-        }));
+        const mappedPromos: ServiceItem[] = (promosRes.data ?? []).map(
+          (p: any) => ({
+            id: p.promo_id,
+            name: p.name ?? p.promo_name ?? "Promotion",
+            price: p.price ?? 0,
+            duration: parseDuration(p.duration),
+            description: p.description ?? "",
+            type: "promo" as const,
+            category: p.category ?? "Hair",
+          }),
+        );
 
         setServices([...mappedServices, ...mappedPromos]);
       } catch (err: any) {
@@ -91,22 +99,25 @@ export default function ServiceSelectionPage() {
         setLoading(false);
       }
     }
-
     fetchData();
   }, [supabase]);
 
-  const filteredServices = services.filter((s) => {
-    const sCat = s.category?.toLowerCase().trim() || "";
-    const selCat = selectedCategory.toLowerCase().trim();
+  // Sync loading state to layout context
+  useEffect(() => {
+    setIsPageLoading(loading);
+    return () => setIsPageLoading(false);
+  }, [loading, setIsPageLoading]);
 
-    const matchCat =
+  const filteredServices = services.filter((s) => {
+    const sCat = s.category?.toLowerCase().trim() ?? "";
+    const selCat = selectedCategory.toLowerCase().trim();
+    return (
       selectedCategory === "all" ||
       sCat === selCat ||
       (selCat === "brows" && sCat.includes("brow")) ||
       (selCat === "hair" && sCat.includes("hair")) ||
-      (selCat === "nails" && sCat.includes("nails"));
-
-    return matchCat;
+      (selCat === "nails" && sCat.includes("nails"))
+    );
   });
 
   const handleNext = () => {
@@ -114,18 +125,15 @@ export default function ServiceSelectionPage() {
       toast.error("Please select at least one service");
       return;
     }
-    router.push("/book/datetime");
+    router.push("/dashboard/book/stylist");
   };
 
-  const CATEGORIES = [
-    { id: "all", label: "All Services" },
-    { id: "hair", label: "Hair" },
-    { id: "nails", label: "Nails" },
-    { id: "brows", label: "Brows" },
-  ] as const;
+  if (loading) return <BookAppointmentSkeleton />;
 
   return (
-    <div className="max-w-6xl mx-auto mb-24 mt-8 px-6 sm:px-0">
+    <div className="max-w-6xl mx-auto pb-36 mt-8 px-6 sm:px-0">
+      <BookingProgressBar />
+      {/* Header */}
       <div className="mb-8 text-center sm:text-left">
         <h2 className="text-4xl font-bold mb-3 text-black tracking-tight">
           Select Your Services
@@ -135,7 +143,7 @@ export default function ServiceSelectionPage() {
         </p>
       </div>
 
-      {/* Original Category Filter Style */}
+      {/* Category Filter */}
       <div className="flex gap-2 mb-10 flex-wrap justify-center sm:justify-start">
         {CATEGORIES.map((cat) => (
           <Button
@@ -143,8 +151,8 @@ export default function ServiceSelectionPage() {
             onClick={() => setSelectedCategory(cat.id)}
             className={`rounded-[8px] px-5 h-10 transition-all border cursor-pointer ${
               selectedCategory === cat.id
-                ? "bg-black text-white border-black hover:bg-black/90 shadow-sm"
-                : "bg-white text-black border-gray-200 hover:bg-gray-50"
+                ? "bg-[#494136] text-white border-black hover:bg-[#494136] shadow-sm"
+                : "bg-white text-black border-gray-200 hover:bg-[#494136] hover:text-white"
             }`}
           >
             {cat.label}
@@ -152,15 +160,8 @@ export default function ServiceSelectionPage() {
         ))}
       </div>
 
-      {/* Services Grid (Keeping Premium Cards & 4-Column on XL) */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-black/10" />
-          <p className="text-xs font-bold text-gray-400 tracking-widest uppercase">
-            Loading...
-          </p>
-        </div>
-      ) : filteredServices.length === 0 ? (
+      {/* Services Grid */}
+      {filteredServices.length === 0 ? (
         <div className="text-center py-16 text-gray-500">
           No services found.
         </div>
@@ -204,14 +205,9 @@ export default function ServiceSelectionPage() {
                   <span className="text-xl font-bold text-[#1a1a1a] font-sans tracking-tight">
                     ₱{service.price.toLocaleString()}
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDetailService(service);
-                      setIsDetailModalOpen(true);
-                    }}
+                  <div
                     className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-none outline-none cursor-pointer",
+                      "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
                       isSelected
                         ? "bg-[#494136] text-white"
                         : "bg-[#f3efee] group-hover:bg-[#494136] group-hover:text-white",
@@ -229,10 +225,10 @@ export default function ServiceSelectionPage() {
                     >
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
-                  </button>
+                  </div>
                 </div>
 
-                {/* Decorative Element */}
+                {/* Decorative */}
                 <div
                   className={cn(
                     "absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-[#494136]/5 to-transparent rounded-full -mr-16 -mt-16 transition-transform duration-700 pointer-events-none",
@@ -247,77 +243,47 @@ export default function ServiceSelectionPage() {
         </div>
       )}
 
-      {/* Original Summary Logic */}
+      {/* Sticky Summary Footer */}
       {selectedServices.length > 0 && (
-        <Card className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-6xl shadow-2xl z-50 animate-in slide-in-from-bottom-6 border-t font-medium">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="w-full overflow-hidden">
-                <h3 className="font-semibold mb-2">
-                  Selected Services ({selectedServices.length})
-                </h3>
-                <div className="flex gap-2 flex-wrap mb-3 max-h-[80px] overflow-y-auto w-full scrollbar-hide">
-                  {selectedServices.map((service) => (
-                    <Badge
-                      key={service.id}
-                      variant="secondary"
-                      className="gap-1 flex items-center cursor-pointer hover:bg-red-50 hover:text-red-500 transition-colors"
-                      onClick={() => removeService(service.id)}
-                    >
-                      <span className="font-medium">{service.name}</span>
-                      <X className="w-3 h-3 text-gray-400" />
-                    </Badge>
-                  ))}
+        <div className="fixed bottom-6 left-0 right-0 md:left-64 flex justify-center px-4 z-50 pointer-events-none">
+          <Card className="w-full max-w-7xl shadow-2xl animate-in slide-in-from-bottom-6 border-t font-medium pointer-events-auto">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="w-full overflow-hidden">
+                  <h3 className="font-semibold mb-2">
+                    Selected Services ({selectedServices.length})
+                  </h3>
+                  <div className="flex gap-2 flex-wrap mb-3 max-h-[80px] overflow-y-auto w-full scrollbar-hide">
+                    {selectedServices.map((service) => (
+                      <Badge
+                        key={service.id}
+                        variant="secondary"
+                        className="gap-1 flex items-center cursor-pointer hover:bg-red-50 hover:text-red-500 transition-colors"
+                        onClick={() => removeService(service.id)}
+                      >
+                        <span className="font-medium">{service.name}</span>
+                        <X className="w-3 h-3 text-gray-400" />
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-4 text-sm font-medium text-foreground">
+                    <p>Total: ₱{getTotalPrice().toLocaleString()}</p>
+                    <p className="text-gray-500">{getTotalDuration()} mins</p>
+                  </div>
                 </div>
-                <div className="flex gap-4 text-sm font-medium text-foreground">
-                  <p>Total: ₱{getTotalPrice().toLocaleString()}</p>
-                  <p className="text-gray-500">{getTotalDuration()} mins</p>
-                </div>
+                <Button
+                  size="lg"
+                  onClick={handleNext}
+                  className="w-full sm:w-auto shrink-0 bg-black text-white hover:bg-black/90 cursor-pointer"
+                >
+                  Next Step
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </div>
-              <Button
-                size="lg"
-                onClick={handleNext}
-                className="w-full sm:w-auto shrink-0 bg-black text-white hover:bg-black/90 cursor-pointer"
-              >
-                Next Step
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       )}
-
-      {/* Detail Modal */}
-      <ServiceDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        service={
-          detailService
-            ? {
-                ...detailService,
-                duration: `${detailService.duration}`,
-                status: "available",
-              }
-            : null
-        }
-        formatDuration={(d) => (d ? `${d} mins` : null)}
-        isSelected={
-          detailService
-            ? selectedServices.some((s) => s.id === detailService.id)
-            : false
-        }
-        onSelect={(service) => {
-          if (!detailService) return;
-          const isCurrentlySelected = selectedServices.some(
-            (s) => s.id === detailService.id,
-          );
-          if (isCurrentlySelected) {
-            removeService(detailService.id);
-          } else {
-            addService(detailService);
-          }
-        }}
-      />
     </div>
   );
 }

@@ -1,13 +1,14 @@
-import { DashboardShell } from "@/components/dashboard/DashboardShell"
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { ProfileProvider } from "@/contexts/ProfileContext";
 
 export default function CustomerLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <DashboardShell>
-      {children}
-    </DashboardShell>
-  )
+    <ProfileProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </ProfileProvider>
+  );
 }

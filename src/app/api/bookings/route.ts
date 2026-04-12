@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       const { data: promo } = await supabase
         .from('promos')
         .select('promo_id')
-        .eq('promo_name', promo_code)
+        .eq('name', promo_code)
         .single()
       promotion_id = promo?.promo_id || null
     }
@@ -80,9 +80,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Insert Reservation
-    const formattedDate = new Date(`${booking_date}T${booking_time}:00`)
-    // Calculate naive end_time based on service duration (assuming standard interval syntax like '01:00:00')
-    const start_time = formattedDate.toISOString()
+    // Create a timestamp string with the Philippines offset (+08:00) to ensure accurate point-in-time storage
+    const start_time = `${booking_date}T${booking_time}:00+08:00`
 
     const { data: reservation, error: bookingError } = await supabase
       .from('reservation')
@@ -114,8 +113,18 @@ export async function POST(request: NextRequest) {
         price_at_time: amount,
         duration_at_time: service?.duration || '01:00:00'
     })
+    
+    // 4. Create Notification for the user
+    if (profile_id) {
+      await supabase.from("notifications").insert({
+        profile_id: profile_id,
+        title: "New Appointment",
+        message: `Your booking for ${fetchedServiceName} has been confirmed for ${booking_date} at ${booking_time}.`,
+        type: "booking",
+      });
+    }
 
-    // 4. Create Payment
+    // 5. Create Payment
     if (payment_method === 'gcash_online') {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
       const invoice = await (xenditClient as unknown as { Invoice: { createInvoice: (params: unknown) => Promise<{ id: string; invoice_url: string }> } }).Invoice.createInvoice({
@@ -195,24 +204,71 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data, error } = await supabase
+  // 1. Fetch reservations with basics
+  const { data: reservations, error: rError } = await supabase
     .from('reservation')
     .select(`
       *,
       guests (*),
-      booking_items (
-        *,
-        services (*)
-      ),
+      booking_items (*),
       payments (*)
     `)
     .eq('profile_id', user.id)
     .order('reservation_date', { ascending: false })
     .order('start_time', { ascending: false })
 
-  if (error) {
-    return Response.json({ error: error.message }, { status: 500 })
+  if (rError) {
+    console.error('[API Bookings GET] Reservation fetch error:', rError)
+    return Response.json({ error: rError.message }, { status: 500 })
   }
 
-  return Response.json(data)
+  // 2. Fetch all related services and promos manually
+  const allServiceIds = new Set<string>();
+  const allPromoIds = new Set<string>();
+  reservations?.forEach(res => {
+    res.booking_items?.forEach((item: any) => {
+      if (item.service_id) allServiceIds.add(item.service_id);
+      if (item.promo_id) allPromoIds.add(item.promo_id);
+    });
+  });
+
+  let servicesMap: Record<string, any> = {};
+  if (allServiceIds.size > 0) {
+    const { data: services } = await supabase
+      .from('services')
+      .select('*')
+      .in('service_id', Array.from(allServiceIds));
+    
+    if (services) {
+      services.forEach(s => {
+        servicesMap[s.service_id] = s;
+      });
+    }
+  }
+
+  let promosMap: Record<string, any> = {};
+  if (allPromoIds.size > 0) {
+    const { data: promos } = await supabase
+      .from('promos')
+      .select('*')
+      .in('promo_id', Array.from(allPromoIds));
+    
+    if (promos) {
+      promos.forEach(p => {
+        promosMap[p.promo_id] = p;
+      });
+    }
+  }
+
+  // 3. Map services & promos back to booking items
+  const enrichedData = reservations?.map(res => ({
+    ...res,
+    booking_items: res.booking_items?.map((item: any) => ({
+      ...item,
+      services: servicesMap[item.service_id] || null,
+      promos: promosMap[item.promo_id] || null
+    }))
+  }));
+
+  return Response.json(enrichedData)
 }

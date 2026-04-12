@@ -28,7 +28,7 @@ export default function ServicesPage() {
             .from("promos")
             .select("*")
             .eq("status", "active")
-            .order("promo_name", { ascending: true }),
+            .order("name", { ascending: true }),
         ]);
 
         if (servicesRes.error) throw servicesRes.error;
@@ -61,7 +61,7 @@ export default function ServicesPage() {
     // Add item with a unique ID (timestamp) to allow duplicates if needed, or check for existence
     const newItem = {
       id: item.service_id || item.promo_id,
-      name: item.service_name || item.promo_name,
+      name: item.service_name || item.name || item.promo_name,
       price: item.price,
       type: item.service_id ? 'service' : 'promo',
       addedAt: new Date().toISOString()
@@ -195,11 +195,11 @@ export default function ServicesPage() {
                   key={promo.promo_id}
                   className="group hover:shadow-lg transition-all duration-300 border-amber-200/50 bg-amber-50/10 overflow-hidden"
                 >
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg line-clamp-1">
-                      {promo.promo_name}
-                    </CardTitle>
-                  </CardHeader>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg line-clamp-1">
+                        {promo.name || promo.promo_name}
+                      </CardTitle>
+                    </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
                       {promo.description || "Limited time offer."}

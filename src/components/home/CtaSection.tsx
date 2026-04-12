@@ -19,7 +19,7 @@ export function CtaSection() {
 
         {/* Action Button */}
         <div className="flex justify-center">
-          <Link href="/book">
+          <Link href="/register">
             <GetStartedButton />
           </Link>
         </div>

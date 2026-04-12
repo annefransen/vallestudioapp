@@ -4,7 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useInView } from "framer-motion";
-import { AspectRatio } from "@/components/ui/AspectRatio";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface ImageGalleryProps {
   images: string[];

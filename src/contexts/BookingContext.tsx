@@ -9,22 +9,80 @@ export type ServiceItem = {
   duration: number;
   description: string;
   type: "service" | "promo";
+  category: "Hair" | "Nails" | "Brows";
 };
 
 export const SERVICES: ServiceItem[] = [
-  { id: "haircut-blowdry", name: "Hair Cut w/ Blow Dry", price: 149, duration: 45, description: "Precision cut with a professional blowout.", type: "service" },
-  { id: "hair-wash-cut", name: "Hair Wash / Dry & Cut", price: 199, duration: 60, description: "Refreshing wash, precision cut, and styling.", type: "service" },
-  { id: "hair-spa", name: "Hair Spa + Cut", price: 299, duration: 90, description: "Deep conditioning spa treatment with a cut.", type: "service" },
-  { id: "color", name: "Full Hair Color", price: 599, duration: 120, description: "Vibrant full color transformation.", type: "service" },
-  { id: "gel-mani", name: "Gel Manicure", price: 350, duration: 60, description: "Long-lasting gel polish manicure.", type: "service" },
+  {
+    id: "haircut-blowdry",
+    name: "Hair Cut w/ Blow Dry",
+    price: 149,
+    duration: 45,
+    description: "Precision cut with a professional blowout.",
+    type: "service",
+    category: "Hair",
+  },
+  {
+    id: "hair-wash-cut",
+    name: "Hair Wash / Dry & Cut",
+    price: 199,
+    duration: 60,
+    description: "Refreshing wash, precision cut, and styling.",
+    type: "service",
+    category: "Hair",
+  },
+  {
+    id: "hair-spa",
+    name: "Hair Spa + Cut",
+    price: 299,
+    duration: 90,
+    description: "Deep conditioning spa treatment with a cut.",
+    type: "service",
+    category: "Hair",
+  },
+  {
+    id: "color",
+    name: "Full Hair Color",
+    price: 599,
+    duration: 120,
+    description: "Vibrant full color transformation.",
+    type: "service",
+    category: "Hair",
+  },
+  {
+    id: "gel-mani",
+    name: "Gel Manicure",
+    price: 350,
+    duration: 60,
+    description: "Long-lasting gel polish manicure.",
+    type: "service",
+    category: "Nails",
+  },
 ];
 
 export const PROMOS: ServiceItem[] = [
-  { id: "promo-rebond-color", name: "Rebond + Color Combo", price: 1299, duration: 180, description: "Complete hair makeover package.", type: "promo" },
-  { id: "promo-mani-pedi", name: "Mani & Pedi Luxe", price: 250, duration: 90, description: "Relaxing manicure and pedicure bundle.", type: "promo" },
+  {
+    id: "promo-rebond-color",
+    name: "Rebond + Color Combo",
+    price: 1299,
+    duration: 180,
+    description: "Complete hair makeover package.",
+    type: "promo",
+    category: "Hair",
+  },
+  {
+    id: "promo-mani-pedi",
+    name: "Mani & Pedi Luxe",
+    price: 250,
+    duration: 90,
+    description: "Relaxing manicure and pedicure bundle.",
+    type: "promo",
+    category: "Nails",
+  },
 ];
 
 export type GuestInfo = {
+  notes: string | number | readonly string[] | undefined;
   first_name: string;
   last_name: string;
   gmail: string;
@@ -35,16 +93,16 @@ interface BookingContextType {
   selectedServices: ServiceItem[];
   addService: (service: ServiceItem) => void;
   removeService: (id: string) => void;
-  
+
   selectedDate: Date | null;
   setDate: (date: Date | null) => void;
-  
+
   selectedTime: string | null;
   setTime: (time: string | null) => void;
-  
+
   guestInfo: GuestInfo | null;
   setGuestInfo: (info: GuestInfo | null) => void;
-  
+
   getTotalPrice: () => number;
   getTotalDuration: () => number;
   resetBooking: () => void;
@@ -54,7 +112,7 @@ const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [selectedServices, setSelectedServices] = useState<ServiceItem[]>([]);
-  const [selectedDate, setDate] = useState<Date | null>(new Date());
+  const [selectedDate, setDate] = useState<Date | null>(null);
   const [selectedTime, setTime] = useState<string | null>(null);
   const [guestInfo, setGuestInfo] = useState<GuestInfo | null>(null);
 
@@ -67,11 +125,17 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   };
 
   const getTotalPrice = () => {
-    return selectedServices.reduce((total, service) => total + service.price, 0);
+    return selectedServices.reduce(
+      (total, service) => total + service.price,
+      0,
+    );
   };
 
   const getTotalDuration = () => {
-    return selectedServices.reduce((total, service) => total + service.duration, 0);
+    return selectedServices.reduce(
+      (total, service) => total + service.duration,
+      0,
+    );
   };
 
   const resetBooking = () => {

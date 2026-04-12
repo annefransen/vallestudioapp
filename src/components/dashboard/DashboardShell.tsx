@@ -4,7 +4,7 @@ import * as React from "react";
 import { DashboardSidebar } from "@/components/layout/CustomerSidebar";
 import { DashboardTopBar } from "@/components/layout/TopBar";
 import { MobileBottomNav } from "./MobileBottomNav";
-import { createClient } from "@/lib/supabase/client";
+import { useProfile } from "@/contexts/ProfileContext";
 export interface Profile {
   first_name?: string;
   email?: string;
@@ -18,25 +18,7 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = React.useState(false);
-  const [profile, setProfile] = React.useState<Profile | null>(null);
-  const supabase = createClient();
-
-  React.useEffect(() => {
-    const fetchProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("profile_id", user.id)
-          .single();
-        setProfile({ ...data, email: user.email });
-      }
-    };
-    fetchProfile();
-  }, [supabase]);
+  const { profile } = useProfile();
 
   return (
     <div className="flex h-screen bg-muted/20 overflow-hidden">
@@ -51,7 +33,8 @@ export function DashboardShell({
           collapsed={collapsed}
           onToggleSidebar={() => setCollapsed(!collapsed)}
           userName={profile?.first_name}
-          userEmail={profile?.email}
+          userEmail={profile?.gmail}
+          avatarUrl={profile?.avatar_url}
         />
 
         {/* Main scrollable area — add bottom padding on mobile for the bottom nav */}

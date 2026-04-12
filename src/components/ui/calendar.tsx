@@ -1,82 +1,74 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import * as React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/Button";
-
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
-  components: userComponents,
   ...props
-}: CalendarProps) {
-  const defaultClassNames = {
-    months: "relative flex flex-col sm:flex-row gap-4",
-    month: "w-full",
-    month_caption: "relative mx-10 mb-1 flex h-9 items-center justify-center z-20",
-    caption_label: "text-sm font-medium",
-    nav: "absolute top-0 flex w-full justify-between z-10",
-    button_previous: cn(
-      buttonVariants({ variant: "ghost" }),
-      "size-9 text-muted-foreground/80 hover:text-foreground p-0",
-    ),
-    button_next: cn(
-      buttonVariants({ variant: "ghost" }),
-      "size-9 text-muted-foreground/80 hover:text-foreground p-0",
-    ),
-    weekday: "size-9 p-0 text-xs font-medium text-muted-foreground/80",
-    day_button:
-      "relative flex size-9 items-center justify-center whitespace-nowrap rounded-lg p-0 text-foreground outline-offset-2 group-[[data-selected]:not(.range-middle)]:[transition-property:color,background-color,border-radius,box-shadow] group-[[data-selected]:not(.range-middle)]:duration-150 focus:outline-none group-data-[disabled]:pointer-events-none focus-visible:z-10 hover:bg-accent group-data-[selected]:bg-primary hover:text-foreground group-data-[selected]:text-primary-foreground group-data-[disabled]:text-foreground/30 group-data-[disabled]:line-through group-data-[outside]:text-foreground/30 group-data-[outside]:group-data-[selected]:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 group-[.range-start:not(.range-end)]:rounded-e-none group-[.range-end:not(.range-start)]:rounded-s-none group-[.range-middle]:rounded-none group-data-[selected]:group-[.range-middle]:bg-accent group-data-[selected]:group-[.range-middle]:text-foreground",
-    day: "group size-9 px-0 text-sm",
-    range_start: "range-start",
-    range_end: "range-end",
-    range_middle: "range-middle",
-    today:
-      "*:after:pointer-events-none *:after:absolute *:after:bottom-1 *:after:start-1/2 *:after:z-10 *:after:size-[3px] *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-primary [&[data-selected]:not(.range-middle)>*]:after:bg-background [&[data-disabled]>*]:after:bg-foreground/30 *:after:transition-colors",
-    outside: "text-muted-foreground data-selected:bg-accent/50 data-selected:text-muted-foreground",
-    hidden: "invisible",
-    week_number: "size-9 p-0 text-xs font-medium text-muted-foreground/80",
-  };
-
-  const mergedClassNames: typeof defaultClassNames = Object.keys(defaultClassNames).reduce(
-    (acc, key) => ({
-      ...acc,
-      [key]: classNames?.[key as keyof typeof classNames]
-        ? cn(
-            defaultClassNames[key as keyof typeof defaultClassNames],
-            classNames[key as keyof typeof classNames],
-          )
-        : defaultClassNames[key as keyof typeof defaultClassNames],
-    }),
-    {} as typeof defaultClassNames,
-  );
-
-  const defaultComponents = {
-    Chevron: ({ orientation, ...props }: React.ComponentProps<typeof ChevronLeft> & { orientation?: "left" | "right" | "up" | "down" }) => {
-      if (orientation === "left") {
-        return <ChevronLeft size={16} strokeWidth={2} {...props} aria-hidden="true" />;
-      }
-      return <ChevronRight size={16} strokeWidth={2} {...props} aria-hidden="true" />;
-    },
-  };
-
-  const mergedComponents = {
-    ...defaultComponents,
-    ...userComponents,
-  };
-
+}: React.ComponentProps<typeof DayPicker>) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("w-fit", className)}
-      classNames={mergedClassNames}
-      components={mergedComponents}
+      className={cn(className)}
+      classNames={{
+        // Root wrapper — relative so nav can float over caption
+        root: "relative",
+        // Nav sits absolutely across the top of the calendar, overlaying the caption row
+        nav: "absolute top-0 left-0 right-0 flex justify-between items-center h-9 px-1 pointer-events-none z-10",
+        button_previous:
+          "pointer-events-auto size-8 flex items-center justify-center rounded-md text-gray-400 hover:text-[#494136] hover:bg-[#494136]/8 transition-colors",
+        button_next:
+          "pointer-events-auto size-8 flex items-center justify-center rounded-md text-gray-400 hover:text-[#494136] hover:bg-[#494136]/8 transition-colors",
+        // Layout
+        months: "flex flex-col sm:flex-row gap-2",
+        month: "flex flex-col gap-3",
+        month_caption:
+          "flex justify-center pt-1 pb-1 items-center w-full mb-1 h-9",
+        caption_label: "text-base font-semibold tracking-wide text-[#1a1a1a]",
+        // Grid
+        month_grid: "w-full border-collapse",
+        weekdays: "flex mb-1",
+        weekday:
+          "text-gray-400 font-medium text-[0.85rem] w-14 text-center select-none",
+        weeks: "",
+        week: "flex w-full",
+        // Day cell (td wrapper)
+        day: "relative p-0 text-center cursor-pointer",
+        // Day button
+        day_button:
+          "size-14 p-0 text-base font-normal rounded-md inline-flex items-center justify-center transition-colors hover:bg-[#494136]/10  focus:outline-none cursor-pointer",
+        // Modifier states — applied on top of day_button
+        selected:
+          "!bg-[#494136] !text-white focus:!bg-[#494136] focus:!text-white rounded-md font-semibold cursor-pointer",
+        today:
+          "bg-[#494136]/10 text-[#494136] font-bold rounded-md ring-1 ring-[#494136] cursor-pointer",
+        outside: "text-gray-300 opacity-50",
+        disabled:
+          "text-gray-300 opacity-40 line-through cursor-not-allowed pointer-events-none",
+        range_start: "!bg-[#494136] !text-white rounded-md",
+        range_end: "!bg-[#494136] !text-white rounded-md",
+        range_middle: "bg-[#494136]/10 text-[#494136]",
+        hidden: "invisible",
+        ...classNames,
+      }}
+      components={{
+        Chevron: ({
+          orientation,
+        }: {
+          orientation?: "left" | "right" | "up" | "down";
+        }) =>
+          orientation === "left" ? (
+            <ChevronLeft className="size-4" />
+          ) : (
+            <ChevronRight className="size-4" />
+          ),
+      }}
       {...props}
     />
   );

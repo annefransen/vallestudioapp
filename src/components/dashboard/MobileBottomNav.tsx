@@ -3,39 +3,60 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Sparkles, History, Settings } from "lucide-react";
+import {
+  Home,
+  CalendarPlus,
+  CalendarDays,
+  History,
+  UserCircle,
+  LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { title: "Home", href: "/dashboard", icon: Home },
-  { title: "Services", href: "/dashboard/services", icon: Sparkles },
+interface NavItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  exact?: boolean;
+}
+
+const navItems: NavItem[] = [
+  { title: "Home", href: "/dashboard", icon: Home, exact: true },
+  { title: "Book", href: "/dashboard/book", icon: CalendarPlus },
+  { title: "Appts", href: "/dashboard/appointments", icon: CalendarDays },
   { title: "History", href: "/dashboard/history", icon: History },
-  { title: "Settings", href: "/dashboard/settings", icon: Settings },
+  { title: "Profile", href: "/dashboard/profile", icon: UserCircle },
 ];
 
 export function MobileBottomNav() {
   const pathname = usePathname();
 
+  const isActive = (item: NavItem) => {
+    if (item.exact) return pathname === item.href;
+    return pathname.startsWith(item.href);
+  };
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#494136] border-t border-[#fafafa]/10 flex items-center justify-around h-16 px-2 safe-area-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#494136] border-t border-[#fafafa]/10 flex items-center justify-around h-16 px-1 safe-area-bottom">
       {navItems.map((item) => {
-        const isActive = pathname === item.href;
+        const active = isActive(item);
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-200",
-              isActive ? "text-[#fafafa]" : "text-[#fafafa]/50 hover:text-[#fafafa]/80"
+              "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-150",
+              active
+                ? "text-[#fafafa]"
+                : "text-[#fafafa]/45 hover:text-[#fafafa]/75"
             )}
           >
-            <item.icon className={cn("w-5 h-5", isActive && "scale-110")} />
-            <span className="text-[10px] font-medium tracking-wide">
+            <item.icon
+              className={cn("w-5 h-5", active && "scale-105")}
+            />
+            <span className="text-[9px] font-medium tracking-wide">
               {item.title}
             </span>
-            {isActive && (
-              <span className="absolute top-0 w-8 h-0.5 bg-[#fafafa] rounded-full" />
-            )}
           </Link>
         );
       })}

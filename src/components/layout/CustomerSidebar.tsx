@@ -6,24 +6,29 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  Sparkles,
+  CalendarPlus,
+  CalendarDays,
   History,
-  Settings,
-  Calendar as CalendarIcon,
+  UserCircle,
   LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/Calendar";
 
 interface NavItem {
   title: string;
   href: string;
   icon: LucideIcon;
+  exact?: boolean;
 }
 
 const mainNavItems: NavItem[] = [
-  { title: "Home", href: "/dashboard", icon: Home },
-  { title: "Services", href: "/dashboard/services", icon: Sparkles },
+  { title: "Home", href: "/dashboard", icon: Home, exact: true },
+  { title: "Book Appointment", href: "/dashboard/book", icon: CalendarPlus },
+  {
+    title: "My Appointments",
+    href: "/dashboard/appointments",
+    icon: CalendarDays,
+  },
   { title: "History", href: "/dashboard/history", icon: History },
 ];
 
@@ -33,20 +38,24 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+
+  const isActive = (item: NavItem) => {
+    if (item.exact) return pathname === item.href;
+    return pathname.startsWith(item.href);
+  };
 
   return (
     <aside
       className={cn(
-        "flex flex-col h-screen bg-[#494136] text-[#fafafa] border-r border-[#fafafa]/10 overflow-hidden shrink-0 transition-all duration-300 ease-in-out",
-        collapsed ? "w-16" : "w-64"
+        "flex flex-col h-screen bg-white text-[#1a1a1a] border-r border-stone-200 overflow-hidden shrink-0 transition-all duration-300 ease-in-out",
+        collapsed ? "w-16" : "w-64",
       )}
     >
-      {/* Logo Section */}
+      {/* Logo */}
       <div
         className={cn(
-          "flex items-center transition-all duration-300",
-          collapsed ? "p-4 justify-center" : "p-6 justify-center"
+          "flex items-center border-b border-stone-200 h-16 transition-all duration-300",
+          collapsed ? "px-4 justify-center" : "px-5 justify-center",
         )}
       >
         <Link
@@ -54,8 +63,14 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
           className="transition-transform hover:scale-105 active:scale-95"
         >
           {collapsed ? (
-            <div className="w-8 h-8 rounded-lg bg-[#fafafa]/20 flex items-center justify-center text-[#fafafa] font-bold text-sm">
-              VS
+            <div className="w-8 h-8 rounded-lg hover:bg-stone-100 flex text-[#1a1a1a] font-bold text-xs">
+              <Image
+                src="/img/vs-logo.png"
+                alt="Valle Studio Logo"
+                width={140}
+                height={60}
+                className="w-auto h-8"
+              />
             </div>
           ) : (
             <Image
@@ -63,35 +78,38 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
               alt="Valle Studio Logo"
               width={140}
               height={60}
-              className="w-auto h-12 invert brightness-0"
+              className="w-auto h-15"
             />
           )}
         </Link>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto overflow-x-hidden">
+      {/* Navigation */}
+      <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {mainNavItems.map((item) => {
-          const isActive = pathname === item.href;
+          const active = isActive(item);
           return (
             <Link
               key={item.href}
               href={item.href}
               title={collapsed ? item.title : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative",
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group",
                 collapsed ? "justify-center" : "",
-                isActive
-                  ? "bg-[#fafafa]/10 text-[#fafafa] font-semibold"
-                  : "text-[#fafafa]/60 hover:text-[#fafafa] hover:bg-[#fafafa]/5"
+                active
+                  ? "bg-[#494136]/10 text-[#494136] font-semibold"
+                  : "text-stone-500 hover:text-[#1a1a1a] hover:bg-stone-50",
               )}
             >
+              {active && (
+                <span className="absolute left-0 w-0.5 h-5 bg-[#494136] rounded-r-full" />
+              )}
               <item.icon
                 className={cn(
-                  "w-5 h-5 transition-colors shrink-0",
-                  isActive
-                    ? "text-[#fafafa]"
-                    : "text-[#fafafa]/60 group-hover:text-[#fafafa]"
+                  "w-4 h-4 shrink-0 transition-colors",
+                  active
+                    ? "text-[#494136]"
+                    : "text-stone-400 group-hover:text-[#1a1a1a]",
                 )}
               />
               {!collapsed && (
@@ -99,86 +117,10 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
                   {item.title}
                 </span>
               )}
-              {isActive && (
-                <div className="absolute left-0 w-1 h-6 bg-[#fafafa] rounded-r-full" />
-              )}
             </Link>
           );
         })}
-
-        {/* Calendar section — only show when expanded */}
-        {!collapsed && (
-          <div className="mt-8 pt-8 border-t border-[#fafafa]/10">
-            <div className="px-4 mb-4 flex items-center gap-2 text-[#fafafa]/40 uppercase text-[10px] font-bold tracking-[0.2em]">
-              <CalendarIcon className="w-3 h-3" />
-              <span>Calendar</span>
-            </div>
-            <div className="flex justify-center px-1 scale-[0.85] origin-top">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-xl border border-[#fafafa]/5 bg-[#fafafa]/5 text-[#fafafa]"
-                classNames={{
-                  month: "text-[#fafafa]",
-                  caption_label: "text-[#fafafa] font-bold",
-                  weekday: "text-[#fafafa]/50 font-bold",
-                  day: "text-[#fafafa] hover:bg-[#fafafa]/20 rounded-lg",
-                  day_button: "text-[#fafafa] hover:bg-[#fafafa]/20",
-                  today:
-                    "bg-[#fafafa]/20 text-[#fafafa] font-bold ring-1 ring-[#fafafa]/40",
-                  button_previous:
-                    "text-[#fafafa]/60 hover:text-[#fafafa]",
-                  button_next: "text-[#fafafa]/60 hover:text-[#fafafa]",
-                  outside: "text-[#fafafa]/20 opacity-50",
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Collapsed calendar icon */}
-        {collapsed && (
-          <div className="mt-4 pt-4 border-t border-[#fafafa]/10 flex justify-center">
-            <div
-              title="Calendar"
-              className="p-3 rounded-lg text-[#fafafa]/60 hover:text-[#fafafa] hover:bg-[#fafafa]/5 transition-colors cursor-pointer"
-            >
-              <CalendarIcon className="w-5 h-5" />
-            </div>
-          </div>
-        )}
       </nav>
-
-      {/* Bottom Navigation — Settings */}
-      <div className="p-2 border-t border-[#fafafa]/10">
-        <Link
-          href="/dashboard/settings"
-          title={collapsed ? "Settings" : undefined}
-          className={cn(
-            "flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group relative",
-            collapsed ? "justify-center" : "",
-            pathname === "/dashboard/settings"
-              ? "bg-[#fafafa]/10 text-[#fafafa] font-semibold"
-              : "text-[#fafafa]/60 hover:text-[#fafafa] hover:bg-[#fafafa]/5"
-          )}
-        >
-          <Settings
-            className={cn(
-              "w-5 h-5 transition-colors shrink-0",
-              pathname === "/dashboard/settings"
-                ? "text-[#fafafa]"
-                : "text-[#fafafa]/60 group-hover:text-[#fafafa]"
-            )}
-          />
-          {!collapsed && (
-            <span className="text-sm font-medium tracking-wide">Settings</span>
-          )}
-          {pathname === "/dashboard/settings" && (
-            <div className="absolute left-0 w-1 h-6 bg-[#fafafa] rounded-r-full" />
-          )}
-        </Link>
-      </div>
     </aside>
   );
 }

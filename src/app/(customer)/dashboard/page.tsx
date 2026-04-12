@@ -2,201 +2,126 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { format, parseISO, isPast, isToday, isFuture } from "date-fns";
-import { motion } from "framer-motion";
+import { format, parseISO, isPast } from "date-fns";
 import {
-  Calendar,
+  CalendarPlus,
+  History,
+  ArrowRight,
   Clock,
   Scissors,
-  ArrowRight,
-  Plus,
   CheckCircle2,
   XCircle,
   AlertCircle,
   Loader2,
-  CalendarClock,
-  History,
+  CalendarDays,
   Star,
-  User,
-  Heart,
-  ShoppingBasket,
-  Trash2,
-  Tag,
 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/Button";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { Card, CardContent } from "@/components/ui/Card";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { DashboardHomeSkeleton } from "@/components/ui/Skeletons";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/Dialog";
 
-const STATUS_CONFIG = {
-  pending: { label: "Pending", icon: AlertCircle, className: "status-pending" },
-  confirmed: {
-    label: "Confirmed",
-    icon: CheckCircle2,
-    className: "status-confirmed",
-  },
-  completed: {
-    label: "Completed",
-    icon: CheckCircle2,
-    className: "status-completed",
-  },
-  cancelled: {
-    label: "Cancelled",
-    icon: XCircle,
-    className: "status-cancelled",
-  },
-  no_show: { label: "No Show", icon: XCircle, className: "status-no_show" },
-};
-
-function formatTime(time: string) {
-  const [h, m] = time.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${period}`;
-}
-
-type ReservationService = { service_name: string; category: string };
-type ReservationBookingItem = { services: ReservationService };
-type ReservationPayment = {
-  payment_method: string | null;
-  status: string;
-  amount: number | null;
-};
-type UnifiedReservation = {
+/* ── Types ───────────────────────────────────────────────── */
+type Reservation = {
   reservation_id: string;
   reservation_date: string | null;
   start_time: string | null;
   status: string;
-  payment_status: string | null;
-  profile_id: string;
-  booking_items: ReservationBookingItem[];
-  payments: ReservationPayment[];
+  booking_items: Array<{
+    service_id: string | null;
+    services?: { service_name: string; category: string } | null;
+  }>;
+  payments: Array<{ amount: number | null; status: string }>;
 };
 
-function BookingCard({
-  booking,
-  onCancel,
-}: {
-  booking: UnifiedReservation;
-  onCancel: (id: string) => void;
-}) {
-  const status = booking.status;
-  const config =
-    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ||
-    STATUS_CONFIG.pending;
-  const StatusIcon = config.icon;
-  const bookingDate = parseISO(
-    booking.reservation_date || new Date().toISOString(),
-  );
-  const isUpcoming = !isPast(bookingDate) || isToday(bookingDate);
-  const canCancel =
-    (status === "pending" || status === "confirmed") && isUpcoming;
-  const mainService = booking.booking_items?.[0]?.services;
-  const paymentRecord = booking.payments?.[0];
+const STATUS_CONFIG = {
+  pending: {
+    label: "Pending",
+    icon: AlertCircle,
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+  },
+  confirmed: {
+    label: "Confirmed",
+    icon: CheckCircle2,
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-200",
+  },
+  completed: {
+    label: "Completed",
+    icon: CheckCircle2,
+    bg: "bg-stone-50",
+    text: "text-stone-600",
+    border: "border-stone-200",
+  },
+  cancelled: {
+    label: "Cancelled",
+    icon: XCircle,
+    bg: "bg-red-50",
+    text: "text-red-600",
+    border: "border-red-200",
+  },
+  no_show: {
+    label: "No Show",
+    icon: XCircle,
+    bg: "bg-red-50",
+    text: "text-red-600",
+    border: "border-red-200",
+  },
+};
 
-  let displayTime = "00:00";
-  if (booking.start_time) {
-    const d = new Date(booking.start_time);
-    displayTime = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+function formatDisplayTime(startTime: string | null): string {
+  if (!startTime) return "—";
+  try {
+    const d = new Date(startTime);
+    if (isNaN(d.getTime())) return startTime;
+
+    // Explicitly format to Philippines time
+    return new Intl.DateTimeFormat("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Manila",
+    }).format(d);
+  } catch {
+    return startTime;
   }
+}
 
-  return (
-    <Card className="border-border/30 hover:shadow-md hover:border-border/60 transition-all duration-200 cursor-pointer">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-brand flex items-center justify-center shrink-0 shadow-sm">
-              <Scissors className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">
-                {mainService?.service_name || "Salon Service"}
-              </p>
-              <Badge
-                variant="secondary"
-                className={`text-xs mt-0.5 category-${mainService?.category || "hair"}`}
-              >
-                {mainService?.category || "General"}
-              </Badge>
-            </div>
-          </div>
-          <Badge
-            variant="secondary"
-            className={`text-xs ${config.className} shrink-0`}
-          >
-            <StatusIcon className="w-3 h-3 mr-1" />
-            {config.label}
-          </Badge>
-        </div>
+function getGreeting(name: string | undefined) {
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  return `${greeting}, ${name ?? "there"}`;
+}
 
-        <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Calendar className="w-3.5 h-3.5" />
-            {format(bookingDate, "MMM d, yyyy")}
-          </div>
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            {formatTime(displayTime)}
-          </div>
-        </div>
+function getServiceName(item: Reservation["booking_items"][0]): string {
+  return item.services?.service_name ?? "Salon Service";
+}
 
-        {paymentRecord && (
-          <div className="mt-3 pt-3 border-t border-border/40 flex items-center justify-between text-xs">
-            <span className="text-muted-foreground uppercase tracking-wider font-medium text-[0.625rem]">
-              {paymentRecord.payment_method?.replace(/_/g, " ")} Payment
-            </span>
-            <span
-              className={
-                paymentRecord.status === "paid" ||
-                booking.payment_status === "paid"
-                  ? "text-green-600 font-medium"
-                  : "text-amber-600 font-medium"
-              }
-            >
-              {paymentRecord.status === "paid" ||
-              booking.payment_status === "paid"
-                ? "Paid"
-                : "Pending"}{" "}
-              — ₱{(Number(paymentRecord.amount) || 0).toLocaleString()}
-            </span>
-          </div>
-        )}
-
-        {canCancel && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-3 text-destructive border-destructive/20 hover:bg-destructive/5 hover:border-destructive/40 hover:text-destructive transition-colors duration-200"
-            onClick={() => onCancel(booking.reservation_id)}
-          >
-            Cancel Appointment
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
+function getServiceCategory(item: Reservation["booking_items"][0]): string {
+  return item.services?.category ?? "Service";
 }
 
 export default function CustomerDashboard() {
-  const [bookings, setBookings] = useState<UnifiedReservation[]>([]);
+  const [bookings, setBookings] = useState<Reservation[]>([]);
   const [profile, setProfile] = useState<Record<string, string> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [basketItems, setBasketItems] = useState<any[]>([]);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const supabase = createClient();
-
-  useEffect(() => {
-    // Load basket from localStorage
-    const savedBasket = localStorage.getItem("salon_basket");
-    if (savedBasket) {
-      try {
-        setBasketItems(JSON.parse(savedBasket));
-      } catch (e) {
-        console.error("Failed to parse basket");
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -206,11 +131,8 @@ export default function CustomerDashboard() {
       if (!user) return;
 
       const [bookingsRes, profileRes] = await Promise.all([
-        supabase
-          .from("reservation")
-          .select("*, booking_items(*, services(*)), payments(*)")
-          .eq("profile_id", user.id)
-          .order("reservation_date", { ascending: false }),
+        // Use the API route which has proper server-side joins
+        fetch(`/api/bookings?profile_id=${user.id}`),
         supabase
           .from("profiles")
           .select("*")
@@ -218,28 +140,58 @@ export default function CustomerDashboard() {
           .single(),
       ]);
 
-      setBookings(bookingsRes.data ?? []);
+      if (bookingsRes.ok) {
+        const data = await bookingsRes.json();
+        setBookings(Array.isArray(data) ? data : []);
+      } else {
+        const errData = await bookingsRes.json().catch(() => ({}));
+        console.error(
+          "[Dashboard] Bookings fetch error:",
+          bookingsRes.status,
+          errData.error || "",
+        );
+      }
+
       setProfile(profileRes.data);
       setLoading(false);
     };
     loadData();
   }, [supabase]);
 
-  const handleCancel = async (bookingId: string) => {
+  const handleCancel = async () => {
+    if (!cancellingId) return;
+
     const { error } = await supabase
       .from("reservation")
       .update({ status: "cancelled" })
-      .eq("reservation_id", bookingId);
+      .eq("reservation_id", cancellingId);
+
     if (error) {
-      toast.error("Failed to cancel booking");
+      toast.error("Failed to cancel appointment");
       return;
     }
-    toast.success("Booking cancelled successfully");
+
+    // Create notification for cancellation
+    await supabase.from("notifications").insert({
+      profile_id: (await supabase.auth.getUser()).data.user?.id,
+      title: "Appointment Cancelled",
+      message: "Your appointment has been successfully cancelled.",
+      type: "booking",
+    });
+
+    toast.success("Appointment cancelled");
     setBookings((prev) =>
       prev.map((b) =>
-        b.reservation_id === bookingId ? { ...b, status: "cancelled" } : b,
+        b.reservation_id === cancellingId ? { ...b, status: "cancelled" } : b,
       ),
     );
+    setIsCancelConfirmOpen(false);
+    setCancellingId(null);
+  };
+
+  const openCancelConfirm = (id: string | null) => {
+    setCancellingId(id);
+    setIsCancelConfirmOpen(true);
   };
 
   const upcoming = useMemo(
@@ -253,435 +205,280 @@ export default function CustomerDashboard() {
     [bookings],
   );
 
-  const past = useMemo(
-    () =>
-      bookings.filter(
-        (b) =>
-          b.status === "completed" ||
-          b.status === "cancelled" ||
-          b.status === "no_show" ||
-          (b.reservation_date && isPast(parseISO(b.reservation_date))),
-      ),
-    [bookings],
-  );
+  const nextAppointment = upcoming[0] ?? null;
 
-  // Derived stats
-  const lastVisit = useMemo(() => {
-    const completed = bookings.find((b) => b.status === "completed");
-    if (!completed?.reservation_date) return "No visits yet";
-    return format(parseISO(completed.reservation_date), "MMM d, yyyy");
-  }, [bookings]);
-
-  const favoriteService = useMemo(() => {
-    const counts: Record<string, number> = {};
+  const favoriteServices = useMemo(() => {
+    const counts: Record<string, { name: string; count: number }> = {};
     bookings.forEach((b) => {
-      const name = b.booking_items?.[0]?.services?.service_name;
-      if (name) counts[name] = (counts[name] || 0) + 1;
-    });
-    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    return top ? top[0] : "Book to start!";
-  }, [bookings]);
-
-  const nextAppointment = useMemo(() => upcoming[0] ?? null, [upcoming]);
-
-  const favoriteServicesList = useMemo(() => {
-    const counts: Record<string, { service: any; count: number }> = {};
-    bookings.forEach((b) => {
-      const service = b.booking_items?.[0]?.services;
-      if (service?.service_name) {
-        if (!counts[service.service_name]) {
-          counts[service.service_name] = { service, count: 0 };
-        }
-        counts[service.service_name].count++;
+      const name = b.booking_items?.[0]
+        ? getServiceName(b.booking_items[0])
+        : null;
+      if (name && name !== "Salon Service") {
+        if (!counts[name]) counts[name] = { name, count: 0 };
+        counts[name].count++;
       }
     });
     return Object.values(counts)
       .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
+      .slice(0, 4);
   }, [bookings]);
 
-  const recentHistory = useMemo(
-    () =>
-      bookings
-        .filter((b) => b.status === "completed" && b.reservation_date)
-        .slice(0, 3),
-    [bookings],
-  );
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <DashboardHomeSkeleton />;
 
   return (
-    <div className="space-y-6 pb-4">
-      {/* ── Header ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-heading font-bold">
-              Welcome back, {profile?.first_name ?? "there"}!
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Ready for your next glow-up?
-            </p>
-          </div>
-          <Link
-            href="/book"
-            className={buttonVariants({
-              className:
-                "gradient-brand text-white border-0 shrink-0 shadow-sm hover:opacity-90 transition-opacity",
-            })}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Book Appointment</span>
-            <span className="sm:hidden">Book</span>
-          </Link>
-        </div>
-      </motion.div>
+    <div className="space-y-8 pb-6">
+      {/* Greeting */}
+      <div>
+        <h1 className="text-2xl font-bold text-[#1a1a1a] tracking-tight">
+          {getGreeting(profile?.first_name)}
+        </h1>
+        <p className="text-sm text-stone-500 mt-0.5">
+          {format(new Date(), "EEEE, MMMM d, yyyy")}
+        </p>
+      </div>
 
-      {/* ── Next Appointment Banner ── */}
-      {nextAppointment && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-        >
-          <Link href="/book" className="block group">
-            <div className="rounded-xl bg-[#494136] text-[#fafafa] px-5 py-4 flex items-center justify-between gap-4 shadow-md hover:shadow-lg hover:bg-[#3a342c] transition-all duration-200 cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#fafafa]/10 flex items-center justify-center shrink-0">
-                  <CalendarClock className="w-5 h-5 text-[#fafafa]" />
+      {/* Next Appointment */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400">
+            Next Appointment
+          </h2>
+          {upcoming.length > 1 && (
+            <Link
+              href="/dashboard/appointments"
+              className="text-xs font-semibold text-[#494136] hover:underline flex items-center gap-1"
+            >
+              View all ({upcoming.length})<ArrowRight className="w-3 h-3" />
+            </Link>
+          )}
+        </div>
+
+        {nextAppointment ? (
+          <Card className="w-full border border-stone-200 bg-white shadow-sm">
+            <CardContent className="roundedxs p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-sm bg-[#494136]/8 flex items-center justify-center shrink-0">
+                    <Scissors className="w-5 h-5 text-[#494136]" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#1a1a1a] text-sm leading-tight">
+                      {nextAppointment.booking_items?.[0]
+                        ? getServiceName(nextAppointment.booking_items[0])
+                        : "Salon Service"}
+                    </p>
+                    <p className="text-xs text-stone-500 mt-1 capitalize">
+                      {nextAppointment.booking_items?.[0]
+                        ? getServiceCategory(nextAppointment.booking_items[0])
+                        : "Service"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#fafafa]/60 mb-0.5">
-                    Next Appointment
-                  </p>
-                  <p className="font-semibold text-sm">
-                    {nextAppointment.booking_items?.[0]?.services
-                      ?.service_name || "Appointment"}{" "}
-                    &mdash;{" "}
+                {(() => {
+                  const cfg =
+                    STATUS_CONFIG[
+                      nextAppointment.status as keyof typeof STATUS_CONFIG
+                    ] ?? STATUS_CONFIG.pending;
+                  const Icon = cfg.icon;
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-xs font-semibold border ${cfg.bg} ${cfg.text} ${cfg.border} shrink-0`}
+                    >
+                      <Icon className="w-3 h-3" />
+                      {cfg.label}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-stone-100 flex flex-wrap items-center gap-5 text-sm text-stone-600">
+                <div className="flex items-center gap-1.5">
+                  <CalendarDays className="w-4 h-4 text-stone-400" />
+                  <span className="font-medium">
                     {nextAppointment.reservation_date
                       ? format(
                           parseISO(nextAppointment.reservation_date),
-                          "MMM d",
+                          "MMM d, yyyy",
                         )
-                      : ""}
-                    {nextAppointment.start_time &&
-                      (() => {
-                        const d = new Date(nextAppointment.start_time!);
-                        const h = d.getHours(),
-                          m = d.getMinutes();
-                        const period = h >= 12 ? "PM" : "AM";
-                        return `, ${h % 12 || 12}:${String(m).padStart(2, "0")} ${period}`;
-                      })()}
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-[#fafafa]/60 group-hover:text-[#fafafa] group-hover:translate-x-1 transition-all duration-200" />
-            </div>
-          </Link>
-        </motion.div>
-      )}
-
-      {/* ── Stat Cards ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Card className="border-border/30 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-default">
-            <CardContent className="p-4 flex sm:flex-col items-center sm:items-start gap-3 sm:gap-1">
-              <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                <History className="w-4 h-4 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                  Last Visit
-                </p>
-                <p className="font-bold text-sm mt-0.5 text-foreground">
-                  {lastVisit}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/30 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-default">
-            <CardContent className="p-4 flex sm:flex-col items-center sm:items-start gap-3 sm:gap-1">
-              <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                <Star className="w-4 h-4 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                  Favorite Service
-                </p>
-                <p className="font-bold text-sm mt-0.5 text-foreground truncate max-w-[160px]">
-                  {favoriteService}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/30 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-default">
-            <CardContent className="p-4 flex sm:flex-col items-center sm:items-start gap-3 sm:gap-1">
-              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                <CalendarClock className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                  Upcoming
-                </p>
-                <p className="font-bold text-2xl mt-0.5 text-blue-600">
-                  {upcoming.length}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </motion.div>
-
-      {/* ── Main Tabs ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-      >
-        <Tabs defaultValue="upcoming">
-          <TabsList className="mb-5">
-            <TabsTrigger value="upcoming">
-              Upcoming{" "}
-              {upcoming.length > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#494136] text-[#fafafa] text-[10px] font-bold">
-                  {upcoming.length}
+                      : "—"}
                   </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="favorites" className="flex items-center gap-2">
-              <Heart className="w-3.5 h-3.5" />
-              Favorites
-            </TabsTrigger>
-            <TabsTrigger value="basket" className="flex items-center gap-2">
-              <ShoppingBasket className="w-3.5 h-3.5" />
-              Basket
-              {basketItems.length > 0 && (
-                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold">
-                  {basketItems.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="upcoming">
-            {upcoming.length === 0 ? (
-              <div className="text-center py-14 space-y-5">
-                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
-                  <Calendar className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <div>
-                  <p className="font-semibold">No upcoming appointments</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Treat yourself — book your next visit now.
-                  </p>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-stone-400" />
+                  <span className="font-medium">
+                    {formatDisplayTime(nextAppointment.start_time)}
+                  </span>
                 </div>
-                <Link
-                  href="/book"
-                  className={buttonVariants({
-                    className:
-                      "gradient-brand text-white border-0 shadow-sm hover:opacity-90 transition-opacity",
-                  })}
-                >
-                  Book Appointment
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Link>
-
-                {/* Recent History Preview when no upcoming */}
-                {recentHistory.length > 0 && (
-                  <div className="mt-8 text-left border rounded-xl border-border/30 overflow-hidden shadow-sm">
-                    <div className="px-4 py-3 bg-muted/30 border-b border-border/30">
-                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Your Recent Visits
-                      </p>
-                    </div>
-                    {recentHistory.map((b) => (
-                      <div
-                        key={b.reservation_id}
-                        className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 transition-colors duration-150 gap-3 border-b border-border/20 last:border-0"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-[#494136]/10 flex items-center justify-center shrink-0">
-                            <Scissors className="w-3.5 h-3.5 text-[#494136]" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              {b.booking_items?.[0]?.services?.service_name ||
-                                "Salon Service"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {b.reservation_date
-                                ? format(
-                                    parseISO(b.reservation_date),
-                                    "MMM d, yyyy",
-                                  )
-                                : ""}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] status-completed shrink-0"
-                        >
-                          Completed
-                        </Badge>
-                      </div>
-                    ))}
-                    <div className="px-4 py-3">
-                      <Link
-                        href="/dashboard/history"
-                        className="text-xs font-semibold text-[#494136] hover:underline flex items-center gap-1"
-                      >
-                        View full history <ArrowRight className="w-3 h-3" />
-                      </Link>
-                    </div>
+                {nextAppointment.payments?.[0]?.amount && (
+                  <div className="ml-auto">
+                    <span className="text-xs text-stone-400 font-medium">
+                      ₱
+                      {Number(
+                        nextAppointment.payments[0].amount,
+                      ).toLocaleString()}
+                    </span>
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="space-y-3">
-                {upcoming.map((booking, i) => (
-                  <motion.div
-                    key={booking.reservation_id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                  >
-                    <BookingCard booking={booking} onCancel={handleCancel} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
-          {/* Favorites Tab */}
-          <TabsContent value="favorites">
-            {favoriteServicesList.length === 0 ? (
-              <div className="text-center py-14 space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
-                  <Star className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <p className="font-semibold">No favorites yet</p>
-                <p className="text-sm text-muted-foreground">
-                  Your most booked services will appear here.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {favoriteServicesList.map(({ service, count }, i) => (
-                  <motion.div
-                    key={service.service_name}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
+              {(nextAppointment.status === "pending" ||
+                nextAppointment.status === "confirmed") && (
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-colors cursor-pointer"
+                    onClick={() =>
+                      openCancelConfirm(nextAppointment.reservation_id)
+                    }
                   >
-                    <Card className="border-border/30 hover:border-amber-200 transition-colors duration-200">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                            <Scissors className="w-5 h-5 text-amber-600" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-sm">{service.service_name}</p>
-                            <p className="text-xs text-muted-foreground">Chosen {count} times</p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm" className="rounded-full text-amber-600" asChild>
-                          <Link href="/book">Book Again</Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Basket Tab */}
-          <TabsContent value="basket">
-            {basketItems.length === 0 ? (
-              <div className="text-center py-14 space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
-                  <ShoppingBasket className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-semibold">Your basket is empty</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    See something you like? Add it to your basket.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/dashboard/services">Browse Services</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {basketItems.map((item, i) => (
-                  <motion.div
-                    key={`${item.id}-${i}`}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                  >
-                    <Card className="border-border/40">
-                      <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Tag className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-sm">{item.name}</p>
-                            <p className="font-bold text-xs text-primary">₱{item.price?.toLocaleString()}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                           <Button 
-                             variant="ghost" 
-                             size="icon" 
-                             className="text-destructive w-8 h-8"
-                             onClick={() => {
-                               const newBasket = basketItems.filter((_, idx) => idx !== i);
-                               setBasketItems(newBasket);
-                               localStorage.setItem("salon_basket", JSON.stringify(newBasket));
-                             }}
-                           >
-                             <Trash2 className="w-4 h-4" />
-                           </Button>
-                           <Button size="sm" className="rounded-full h-8 px-4" asChild>
-                             <Link href="/book">Book Now</Link>
-                           </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-                <div className="pt-4 border-t flex items-center justify-between">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold block">Total Est.</span>
-                    <span className="text-lg font-bold">₱{basketItems.reduce((acc, item) => acc + (item.price || 0), 0).toLocaleString()}</span>
-                  </div>
-                  <Button className="gradient-brand border-0 text-white shadow-md shadow-primary/20" asChild>
-                    <Link href="/book">Continue to Booking</Link>
+                    Cancel Appointment
                   </Button>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="w-full border border-dashed border-stone-200 bg-stone-50/50">
+            <CardContent className="p-8 flex flex-col items-center text-center gap-3">
+              <div className="w-12 h-12 rounded-sm bg-stone-100 flex items-center justify-center">
+                <CalendarDays className="w-6 h-6 text-stone-400" />
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+              <div>
+                <p className="font-semibold text-sm text-stone-700">
+                  No upcoming appointments
+                </p>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Book a service to get started
+                </p>
+              </div>
+              <Link href="/dashboard/book">
+                <Button
+                  size="sm"
+                  className="mt-1 bg-[#494136] hover:bg-[#3a342c] text-white border-0"
+                >
+                  <CalendarPlus className="w-3.5 h-3.5 mr-1.5" />
+                  Book Appointment
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+      </section>
+
+      {/* Quick Actions */}
+      <section>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">
+          Quick Actions
+        </h2>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link href="/dashboard/book" className="flex-1">
+            <button className="w-full flex items-center justify-between px-5 py-4 rounded-sm border border-stone-200 bg-white hover:border-[#494136]/30 hover:bg-stone-50 transition-all duration-150 cursor-pointer group">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-sm bg-[#494136]/8 flex items-center justify-center">
+                  <CalendarPlus className="w-4 h-4 text-[#494136]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-[#1a1a1a]">
+                    Book Appointment
+                  </p>
+                  <p className="text-xs text-stone-500">Schedule a new visit</p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[#494136] transition-colors" />
+            </button>
+          </Link>
+          <Link href="/dashboard/history" className="flex-1">
+            <button className="w-full flex items-center justify-between px-5 py-4 rounded-sm border border-stone-200 bg-white hover:border-stone-300 hover:bg-stone-50 transition-all duration-150 cursor-pointer group">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-sm bg-stone-100 flex items-center justify-center">
+                  <History className="w-4 h-4 text-stone-600" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-[#1a1a1a]">
+                    View History
+                  </p>
+                  <p className="text-xs text-stone-500">
+                    Past appointments & receipts
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-stone-600 transition-colors" />
+            </button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Favorite Services */}
+      {favoriteServices.length > 0 && (
+        <section>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">
+            Your Favorite Services
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {favoriteServices.map(({ name, count }) => (
+              <Card
+                key={name}
+                className="border border-stone-200 bg-white hover:border-stone-300 hover:shadow-sm transition-all duration-150"
+              >
+                <CardContent className="p-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-sm bg-amber-50 flex items-center justify-center shrink-0">
+                      <Scissors className="w-4 h-4 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-[#1a1a1a] leading-tight">
+                        {name}
+                      </p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                        <span className="text-xs text-stone-500">
+                          Booked {count} {count === 1 ? "time" : "times"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Link href="/dashboard/book">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs border-stone-200 hover:bg-[#494136] hover:text-white hover:border-[#494136] transition-colors cursor-pointer"
+                    >
+                      Book Again
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+      {/* Cancellation Confirmation Dialog */}
+      <Dialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Appointment?</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this appointment? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2">
+            <DialogClose
+              render={<Button variant="outline" className="cursor-pointer" />}
+            >
+              No, Keep Appointment
+            </DialogClose>
+            <Button
+              variant="default"
+              className="bg-red-500 hover:bg-red-600 text-white border-0 cursor-pointer"
+              onClick={handleCancel}
+            >
+              Yes, Cancel Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
