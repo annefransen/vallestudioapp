@@ -1,56 +1,74 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Calendar, UserPlus, Scissors, Users,
-  Tag, CreditCard, Menu, X, LogOut, ChevronRight
+  LayoutDashboard, BarChart3, CalendarCheck, Users, History,
+  CalendarDays, Scissors, Tag, ImageIcon, Users2,
+  UserRoundCheck, CreditCard, X
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
-  { href: '/admin/reservations', label: 'Reservations', icon: Calendar },
-  { href: '/admin/walk-ins', label: 'Walk-ins', icon: UserPlus },
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/admin/performance', label: 'Performance', icon: BarChart3 },
+  { href: '/admin/reservations', label: 'Reservation', icon: CalendarCheck },
+  { href: '/admin/walk-ins', label: 'Walk-Ins Queue', icon: Users },
+  { href: '/admin/walk-ins?view=history', label: 'Walk-In History', icon: History },
+  { href: '/admin/stylists', label: 'Stylist Schedule', icon: CalendarDays },
   { href: '/admin/services', label: 'Services', icon: Scissors },
-  { href: '/admin/stylists', label: 'Stylists', icon: Users },
-  { href: '/admin/promotions', label: 'Promotions', icon: Tag },
+  { href: '/admin/promotions', label: 'Promos', icon: Tag },
+  { href: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
+  { href: '/admin/customers', label: 'Customers', icon: Users2 },
+  { href: '/admin/staff', label: 'Staff', icon: UserRoundCheck },
   { href: '/admin/payments', label: 'Payments', icon: CreditCard },
 ]
 
-export function AdminSidebar() {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
+interface NavContentProps {
+  collapsed: boolean
+  pathname: string
+  setMobileOpen: (open: boolean) => void
+}
 
-  const isActive = (item: typeof NAV_ITEMS[0]) =>
-    item.exact ? pathname === item.href : pathname.startsWith(item.href)
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
+function NavContent({ collapsed, pathname, setMobileOpen }: NavContentProps) {
+  const isActive = (item: typeof NAV_ITEMS[0]) => {
+    const [path] = item.href.split('?')
+    if (item.exact) return pathname === path
+    return pathname.startsWith(path)
   }
 
-  const renderNavContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-5 border-b border-sidebar-border">
-        <Link href="/admin" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl gradient-brand flex items-center justify-center shadow-md shadow-primary/30">
-            <Scissors className="w-4 h-4 text-white" />
+  return (
+    <div className="flex flex-col h-full bg-white font-sans">
+      {/* Brand */}
+      <div className={cn(
+        "px-5 py-6 border-b border-zinc-100 transition-all duration-300",
+        collapsed ? "px-0 flex justify-center" : "px-5"
+      )}>
+        <Link href="/admin" className="flex items-center gap-3 active:scale-95 transition-transform">
+          <div className={cn(
+            "rounded-xl overflow-hidden bg-zinc-900 flex items-center justify-center shadow-lg shadow-zinc-200 shrink-0",
+            collapsed ? "w-9 h-9" : "w-10 h-10"
+          )}>
+            <Image 
+              src="/img/vs-logo.png" 
+              alt="Valle Studio" 
+              width={40} 
+              height={40} 
+              className="w-full h-full object-cover" 
+            />
           </div>
-          <div>
-            <p className="font-heading font-bold text-sm text-white">Valle Studio</p>
-            <p className="text-xs text-sidebar-foreground/50">Admin Panel</p>
-          </div>
+          {!collapsed && (
+            <div className="animate-in fade-in duration-500">
+              <p className="text-[14px] font-bold text-zinc-900 tracking-tight leading-none">Valle Studio</p>
+              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">Super Admin</p>
+            </div>
+          )}
         </Link>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto no-scrollbar">
         {NAV_ITEMS.map((item) => {
           const active = isActive(item)
           return (
@@ -58,67 +76,77 @@ export function AdminSidebar() {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group ${
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 group relative',
                 active
-                  ? 'bg-primary text-white shadow-sm shadow-primary/30'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
-              }`}
+                  ? 'bg-zinc-900 text-white shadow-md shadow-zinc-200'
+                  : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900',
+                collapsed && "justify-center px-2"
+              )}
             >
-              <item.icon className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground'}`} />
-              <span className="flex-1">{item.label}</span>
-              {active && <ChevronRight className="w-3.5 h-3.5 text-white/70" />}
+              <item.icon className={cn(
+                'w-[18px] h-[18px] shrink-0 transition-colors',
+                active ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-600'
+              )} />
+              
+              {!collapsed && (
+                <span className="flex-1 truncate">{item.label}</span>
+              )}
+
+              {active && !collapsed && (
+                <div className="w-1 h-4 bg-white/20 rounded-full absolute right-3" />
+              )}
+
+              {collapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-zinc-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
+                  {item.label}
+                </div>
+              )}
             </Link>
           )
         })}
       </nav>
-
-      {/* Footer */}
-      <div className="p-3 border-t border-sidebar-border">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-sidebar-foreground/60 hover:text-destructive hover:bg-destructive/10"
-          onClick={handleSignOut}
-        >
-          <LogOut className="w-4 h-4 mr-3" />
-          Sign Out
-        </Button>
-      </div>
     </div>
   )
+}
+
+interface AdminSidebarProps {
+  collapsed: boolean
+  mobileOpen: boolean
+  setMobileOpen: (open: boolean) => void
+}
+
+export function AdminSidebar({ collapsed, mobileOpen, setMobileOpen }: AdminSidebarProps) {
+  const pathname = usePathname()
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 bg-sidebar shrink-0 h-screen sticky top-0">
-        {renderNavContent()}
+      {/* Desktop */}
+      <aside className={cn(
+        "hidden lg:flex flex-col bg-white border-r border-zinc-100 shrink-0 h-screen sticky top-0 z-30 transition-[width] duration-300 ease-in-out",
+        collapsed ? "w-20" : "w-64"
+      )}>
+        <NavContent collapsed={collapsed} pathname={pathname} setMobileOpen={setMobileOpen} />
       </aside>
 
-      {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-sidebar border-b border-sidebar-border px-4 h-14 flex items-center justify-between">
-        <Link href="/admin" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg gradient-brand flex items-center justify-center">
-            <Scissors className="w-3.5 h-3.5 text-white" />
+      {/* Mobile Drawer */}
+      <div className={cn(
+        "lg:hidden fixed inset-0 z-100 transition-opacity duration-300",
+        mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
+        <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+        <div className={cn(
+          "absolute left-0 top-0 bottom-0 w-64 bg-white shadow-2xl transition-transform duration-300 ease-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+          <div className="flex justify-end p-4 lg:hidden">
+            <button onClick={() => setMobileOpen(false)} className="p-2 text-zinc-400"><X className="w-6 h-6" /></button>
           </div>
-          <span className="font-heading font-bold text-sm text-white">Valle Studio Admin</span>
-        </Link>
-        <button
-          className="text-sidebar-foreground p-1.5"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Menu"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </div>
-
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-30" onClick={() => setMobileOpen(false)}>
-          <div className="absolute left-0 top-14 bottom-0 w-64 bg-sidebar shadow-2xl" onClick={e => e.stopPropagation()}>
-            {renderNavContent()}
-          </div>
-          <div className="absolute inset-0 bg-black/50 -z-10" />
+          <NavContent collapsed={collapsed} pathname={pathname} setMobileOpen={setMobileOpen} />
         </div>
-      )}
+      </div>
     </>
   )
 }
+
+

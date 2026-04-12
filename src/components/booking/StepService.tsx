@@ -18,9 +18,9 @@ interface Props {
 
 const CATEGORIES: { value: ServiceCategory | 'all'; label: string; emoji: string }[] = [
   { value: 'all', label: 'All Services', emoji: '✨' },
-  { value: 'hair', label: 'Hair', emoji: '✂️' },
-  { value: 'nails', label: 'Nails', emoji: '💅' },
-  { value: 'brows', label: 'Brows', emoji: '🪄' },
+  { value: 'Hair', label: 'Hair', emoji: '✂️' },
+  { value: 'Nails', label: 'Nails', emoji: '💅' },
+  { value: 'Brow', label: 'Brows', emoji: '🪄' },
 ]
 
 function formatPrice(price: number) {

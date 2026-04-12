@@ -3,7 +3,7 @@
 // ============================================================
 
 export type UserRole = 'customer' | 'admin'
-export type ServiceCategory = 'hair' | 'nails' | 'brows'
+export type ServiceCategory = 'Hair' | 'Nails' | 'Brow'
 export type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
 export type PaymentMethod = 'cash' | 'gcash_instore' | 'gcash_online'
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded'
